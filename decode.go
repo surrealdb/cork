@@ -22,6 +22,7 @@ import (
 	"time"
 )
 
+// Decoder represents a CORK decoder.
 type Decoder struct {
 	r *reader
 }

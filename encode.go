@@ -24,6 +24,7 @@ import (
 	"time"
 )
 
+// Encoder represents a CORK encoder.
 type Encoder struct {
 	w *writer
 }

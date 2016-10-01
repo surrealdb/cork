@@ -94,10 +94,13 @@ const (
 	_                = 0
 )
 
-func Register(interface{}) {
+// Register adds a Corker type to the registry, enabling the
+// object type to be encoded and decoded using the Corker methods.
+func Register(value interface{}) {
 
 }
 
+// Corker represents an object which can encode and decode itself.
 type Corker interface {
 	ExtendCORK() byte
 	MarshalCORK() ([]byte, error)
