@@ -274,7 +274,7 @@ func (e *Encoder) encode(src interface{}) {
 		set := make([]string, 0, len(val))
 		e.encodeBit(cMapStrBool)
 		e.encodeLen(len(val))
-		for k, _ := range val {
+		for k := range val {
 			set = append(set, k)
 		}
 		sort.Strings(set)
@@ -287,7 +287,7 @@ func (e *Encoder) encode(src interface{}) {
 		set := make([]string, 0, len(val))
 		e.encodeBit(cMapStrInt)
 		e.encodeLen(len(val))
-		for k, _ := range val {
+		for k := range val {
 			set = append(set, k)
 		}
 		sort.Strings(set)
@@ -300,7 +300,7 @@ func (e *Encoder) encode(src interface{}) {
 		set := make([]string, 0, len(val))
 		e.encodeBit(cMapStrStr)
 		e.encodeLen(len(val))
-		for k, _ := range val {
+		for k := range val {
 			set = append(set, k)
 		}
 		sort.Strings(set)
@@ -313,7 +313,7 @@ func (e *Encoder) encode(src interface{}) {
 		set := make([]string, 0, len(val))
 		e.encodeBit(cMapStrNil)
 		e.encodeLen(len(val))
-		for k, _ := range val {
+		for k := range val {
 			set = append(set, k)
 		}
 		sort.Strings(set)
