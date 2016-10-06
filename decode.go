@@ -34,13 +34,6 @@ func Decode(src []byte) (dst interface{}) {
 	return dst
 }
 
-// Consume decodes a CORK into a data object.
-func Consume(src []byte, dst interface{}) {
-	buf := bytes.NewBuffer(src)
-	NewDecoder(buf).Decode(dst)
-	return
-}
-
 // NewDecoder returns a Decoder for decoding from an io.Reader.
 func NewDecoder(src io.Reader) *Decoder {
 	return &Decoder{r: newReader(src)}

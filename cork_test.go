@@ -15,6 +15,7 @@
 package cork
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"reflect"
@@ -339,7 +340,8 @@ func TestDefined(t *testing.T) {
 		if test.dec != nil && test.out != nil {
 			Convey(fmt.Sprintf("Object should encode and decode into type --- %T : %v", test.dec, test.dec), t, func() {
 				enc := Encode(test.dec)
-				Consume(enc, test.out)
+				buf := bytes.NewBuffer(enc)
+				NewDecoder(buf).Decode(test.out)
 				So(test.out, ShouldResemble, test.com)
 			})
 		}
@@ -348,7 +350,8 @@ func TestDefined(t *testing.T) {
 			Convey(fmt.Sprintf("Object should encode and decode into type --- %T : %v", test.dec, test.dec), t, func() {
 				dup := reflect.New(reflect.ValueOf(test.dec).Type())
 				enc := Encode(test.dec)
-				Consume(enc, dup.Interface())
+				buf := bytes.NewBuffer(enc)
+				NewDecoder(buf).Decode(dup.Interface())
 				So(dup.Elem().Interface(), ShouldResemble, test.dec)
 			})
 		}
