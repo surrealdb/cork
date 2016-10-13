@@ -50,7 +50,7 @@ decoded as a raw binary data value.
 ### Encoding types
 
 | Encoding name | Byte range        | Usage 
-|: ------------ |: ---------------- |: ---------------------------------------------- |
+| :------------ | :---------------- | :---------------------------------------------- |
 | fixint        | 0x00 ... 0x7F     | A positive number from `0` to `127`
 | fixstr        | 0x80 ... 0x9F     | A string which is `0` to `(1<<4)-1` in length
 | fixbin        | 0xA0 ... 0xAF     | Binary data which is `0` to `(1<<4)-1` in length
