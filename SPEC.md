@@ -66,17 +66,17 @@ decoded as a raw binary data value.
 | str8          | 0xE4              | A string up to `(1<<8)-1` in length
 | str16         | 0xE5              | A string up to `(1<<16)-1` in length
 | str32         | 0xE6              | A string up to `(1<<32)-1` in length
-| str64         | 0xE7              | A string up to `(1<<64)-1` in length
+| str64         | 0xE7              | A string up to `(1<<63)-1` in length
 | -             | -                 | -
 | bin8          | 0xE8              | Binary data up to `(1<<8)-1` in length
 | bin16         | 0xE9              | Binary data up to `(1<<16)-1` in length
 | bin32         | 0xEA              | Binary data up to `(1<<32)-1` in length
-| bin64         | 0xEB              | Binary data up to `(1<<64)-1` in length
+| bin64         | 0xEB              | Binary data up to `(1<<63)-1` in length
 | -             | -                 | -
 | ext8          | 0xEC              | A custom type up to `(1<<8)-1` in length
 | ext16         | 0xED              | A custom type up to `(1<<16)-1` in length
 | ext32         | 0xEE              | A custom type up to `(1<<32)-1` in length
-| ext64         | 0xEF              | A custom type up to `(1<<64)-1` in length
+| ext64         | 0xEF              | A custom type up to `(1<<63)-1` in length
 | -             | -                 | 
 | int8          | 0xF0              | A signed integer less than `(1<<7)-1`
 | int16         | 0xF1              | A signed integer less than `(1<<15)-1`
