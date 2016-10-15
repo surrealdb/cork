@@ -299,7 +299,6 @@ func (d *Decoder) decode(dst interface{}) {
 		}
 	case *[]string:
 		if b == cArr {
-			// d.decodeArrStr(b, val)
 			*val = d.decodeArrStr(b)
 			return
 		}
