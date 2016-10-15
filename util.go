@@ -18,28 +18,20 @@ func isVal(b byte) bool {
 	return b == cTrue || b == cFalse
 }
 
-func isArr(b byte) bool {
-	return b >= cArr && b <= cArr+0x0F
-}
-
-func isMap(b byte) bool {
-	return b >= cMap && b <= cMap+0x0F
-}
-
 func isNum(b byte) bool {
-	return b >= cFixInt && b <= cFixInt+0x7F
-}
-
-func isExt(b byte) bool {
-	return b == cExt8 || b == cExt16 || b == cExt32 || b == cExt64
+	return b >= cFixInt && b <= cFixInt+fixedInt
 }
 
 func isBin(b byte) bool {
-	return b == cBin8 || b == cBin16 || b == cBin32 || b == cBin64 || (b >= cFixBin && b <= cFixBin+0x1F)
+	return b == cBin8 || b == cBin16 || b == cBin32 || b == cBin64 || (b >= cFixBin && b <= cFixBin+fixedBin)
 }
 
 func isStr(b byte) bool {
-	return b == cStr8 || b == cStr16 || b == cStr32 || b == cStr64 || (b >= cFixStr && b <= cFixStr+0x1F)
+	return b == cStr8 || b == cStr16 || b == cStr32 || b == cStr64 || (b >= cFixStr && b <= cFixStr+fixedStr)
+}
+
+func isExt(b byte) bool {
+	return b == cExt8 || b == cExt16 || b == cExt32 || b == cExt64 || (b >= cFixExt && b <= cFixExt+fixedExt)
 }
 
 func isInt(b byte) bool {
@@ -56,4 +48,12 @@ func isFloat(b byte) bool {
 
 func isTime(b byte) bool {
 	return b == cTime
+}
+
+func isArr(b byte) bool {
+	return b == cArr
+}
+
+func isMap(b byte) bool {
+	return b == cMap
 }

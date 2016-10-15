@@ -15,90 +15,64 @@
 package cork
 
 const (
-	fixedInt = 1<<7 - 1
-	fixedBin = 1<<5 - 1
-	fixedStr = 1<<5 - 1
+	fixedInt = 1<<7 - 1 // 127
+	fixedStr = 1<<5 - 1 // 31
+	fixedBin = 1<<4 - 1 // 15
+	fixedExt = 1<<4 - 1 // 15
+	fixedArr = 1<<4 - 1 // 16
+	fixedMap = 1<<4 - 1 // 16
 )
 
 const (
-	cFixInt     byte = 0x00
-	cFixBin          = 0x80
-	cFixStr          = 0xA0
+	cFixInt     byte = 0x00 // -> 0x7F = 128
+	cFixStr          = 0x80 // -> 0x9F = 32
+	cFixBin          = 0xA0 // -> 0xAf = 16
+	cFixExt          = 0xB0 // -> 0xBF = 16
+	cFixArr          = 0xC0 // -> 0xCF = 16
+	cFixMap          = 0xD0 // -> 0xDF = 16
 	_                = 0
-	cNil             = 0xC0
-	cTrue            = 0xC1
-	cFalse           = 0xC2
-	cTime            = 0xC3
+	cNil             = 0xE0
+	cTrue            = 0xE1
+	cFalse           = 0xE2
+	cTime            = 0xE3
 	_                = 0
-	cBin8            = 0xC4
-	cBin16           = 0xC5
-	cBin32           = 0xC6
-	cBin64           = 0xC7
+	cStr8            = 0xE4
+	cStr16           = 0xE5
+	cStr32           = 0xE6
+	cStr64           = 0xE7
 	_                = 0
-	cStr8            = 0xC8
-	cStr16           = 0xC9
-	cStr32           = 0xCA
-	cStr64           = 0xCB
+	cBin8            = 0xE8
+	cBin16           = 0xE9
+	cBin32           = 0xEA
+	cBin64           = 0xEB
 	_                = 0
-	cExt8            = 0xCC
-	cExt16           = 0xCD
-	cExt32           = 0xCE
-	cExt64           = 0xCF
+	cExt8            = 0xEC
+	cExt16           = 0xED
+	cExt32           = 0xEE
+	cExt64           = 0xEF
 	_                = 0
-	cInt8            = 0xD0
-	cInt16           = 0xD1
-	cInt32           = 0xD2
-	cInt64           = 0xD3
+	cInt8            = 0xF0
+	cInt16           = 0xF1
+	cInt32           = 0xF2
+	cInt64           = 0xF3
 	_                = 0
-	cUint8           = 0xD4
-	cUint16          = 0xD5
-	cUint32          = 0xD6
-	cUint64          = 0xD7
+	cUint8           = 0xF4
+	cUint16          = 0xF5
+	cUint32          = 0xF6
+	cUint64          = 0xF7
 	_                = 0
-	cFloat32         = 0xD8
-	cFloat64         = 0xD9
+	cFloat32         = 0xF8
+	cFloat64         = 0xF9
 	_                = 0
-	cArr             = 0xDA
-	cArrNil          = 0xDB
-	cArrBool         = 0xDC
-	cArrTime         = 0xDD
-	cArrStr          = 0xDE
-	cArrInt          = 0xDF
-	cArrInt8         = 0xE0
-	cArrInt16        = 0xE1
-	cArrInt32        = 0xE2
-	cArrInt64        = 0xE3
-	cArrUint         = 0xE4
-	cArrUint16       = 0xE5
-	cArrUint32       = 0xE6
-	cArrUint64       = 0xE7
-	cArrFloat32      = 0xE8
-	cArrFloat64      = 0xE9
+	cComplex64       = 0xFA
+	cComplex128      = 0xFB
 	_                = 0
-	cMap             = 0xF0
-	cStruct          = 0xF1
-	cMapStrNil       = 0xF2
-	cMapStrBool      = 0xF3
-	cMapStrStr       = 0xF4
-	cMapStrInt       = 0xF5
-	cMapNilNil       = 0xF6
-	_                = 0xF7
-	_                = 0xF8
-	_                = 0xF9
-	_                = 0xFA
-	_                = 0xFB
-	_                = 0xFC
-	_                = 0xFD
-	_                = 0xFE
-	_                = 0xFF
+	cArr             = 0xFC
+	cMap             = 0xFD
+	cSym             = 0xFE
+	cAlt             = 0xFF
 	_                = 0
 )
-
-// Register adds a Corker type to the registry, enabling the
-// object type to be encoded and decoded using the Corker methods.
-func Register(value interface{}) {
-
-}
 
 // Corker represents an object which can encode and decode itself.
 type Corker interface {

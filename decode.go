@@ -17,6 +17,7 @@ package cork
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -24,6 +25,7 @@ import (
 
 // Decoder represents a CORK decoder.
 type Decoder struct {
+	h *Handle
 	r *reader
 }
 
@@ -35,390 +37,473 @@ func Decode(src []byte) (dst interface{}) {
 }
 
 // NewDecoder returns a Decoder for decoding from an io.Reader.
-func NewDecoder(src io.Reader) *Decoder {
-	return &Decoder{r: newReader(src)}
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{
+		r: newReader(r),
+		h: &Handle{
+			Precision: false,
+		},
+	}
 }
 
-// Decode decodes the stream from reader and stores the result in the
-// value pointed to by v. v cannot be a nil pointer. v can also be
-// a reflect.Value of a pointer.
-//
-// Note that a pointer to a nil interface is not a nil pointer.
-// If you do not know what type of stream it is, pass in a pointer to a nil interface.
-// We will decode and store a value in that nil interface.
-//
-// Sample usages:
-//   // Decoding into a non-nil typed value
-//   var f float32
-//   err = codec.NewDecoder(r, handle).Decode(&f)
-//
-//   // Decoding into nil interface
-//   var v interface{}
-//   dec := codec.NewDecoder(r, handle)
-//   err = dec.Decode(&v)
-//
-// When decoding into a nil interface{}, we will decode into an appropriate value based
-// on the contents of the stream:
-//   - Numbers are decoded as float64, int64 or uint64.
-//   - Other values are decoded appropriately depending on the type:
-//     bool, string, []byte, time.Time, etc
-//   - Extensions are decoded as RawExt (if no ext function registered for the tag)
-// Configurations exist on the Handle to override defaults
-// (e.g. for MapType, SliceType and how to decode raw bytes).
-//
-// When decoding into a non-nil interface{} value, the mode of encoding is based on the
-// type of the value. When a value is seen:
-//   - If an extension is registered for it, call that extension function
-//   - If it implements BinaryUnmarshaler, call its UnmarshalBinary(data []byte) error
-//   - Else decode it based on its reflect.Kind
-//
-// There are some special rules when decoding into containers (slice/array/map/struct).
-// Decode will typically use the stream contents to UPDATE the container.
-//   - A map can be decoded from a stream map, by updating matching keys.
-//   - A slice can be decoded from a stream array,
-//     by updating the first n elements, where n is length of the stream.
-//   - A slice can be decoded from a stream map, by decoding as if
-//     it contains a sequence of key-value pairs.
-//   - A struct can be decoded from a stream map, by updating matching fields.
-//   - A struct can be decoded from a stream array,
-//     by updating fields as they occur in the struct (by index).
-//
-// When decoding a stream map or array with length of 0 into a nil map or slice,
-// we reset the destination map or slice to a zero-length value.
-//
-// However, when decoding a stream nil, we reset the destination container
-// to its "zero" value (e.g. nil for slice/map, etc).
-//
+// Options sets the configuration options that the Decoder should use.
+func (d *Decoder) Options(h *Handle) *Decoder {
+	d.h = h
+	return d
+}
+
+/*
+Decode decodes the stream into the 'dst' object.
+
+The decoder can not decode into a nil pointer, but can decode into a nil interface.
+If you do not know what type of stream it is, pass in a pointer to a nil interface.
+We will decode and store a value in that nil interface.
+
+When decoding into a nil interface{}, we will decode into an appropriate value based
+on the contents of the stream. When decoding into a non-nil interface{} value, the
+mode of encoding is based on the type of the value.
+
+Example:
+
+	// Decoding into a non-nil typed value
+	var s string
+	buf := bytes.NewBuffer(src)
+	err = codec.NewDecoder(buf).Decode(&s)
+
+	// Decoding into nil interface
+	var v interface{}
+	buf := bytes.NewBuffer(src)
+	err := codec.NewDecoder(buf).Decode(&v)
+
+*/
 func (d *Decoder) Decode(dst interface{}) (err error) {
-	// TODO need to catch panics and enable errors in decoder
+	defer func() {
+		if r := recover(); r != nil {
+			if catch, ok := r.(string); ok {
+				err = fmt.Errorf(catch)
+			}
+			if catch, ok := r.(error); ok {
+				err = catch
+			}
+		}
+	}()
 	d.decode(dst)
 	return
 }
 
-func (d *Decoder) decode(dst interface{}, bits ...byte) {
+func (d *Decoder) decode(dst interface{}) {
 
-	var b byte
-
-	if len(bits) == 0 {
-		b = d.decodeBit()
-	} else {
-		b = bits[0]
-	}
+	b := d.decodeBit()
 
 	switch val := dst.(type) {
 
 	case *bool:
 		if isVal(b) {
 			*val = d.decodeVal(b)
+			return
 		}
 
 	case *[]byte:
 		if isBin(b) {
 			*val = d.decodeBin(b)
+			return
 		}
 
 	case *string:
 		if isStr(b) {
 			*val = d.decodeStr(b)
+			return
 		}
 
 	case *time.Time:
 		if isTime(b) {
 			*val = d.decodeTime(b)
+			return
 		}
 
 	case *int:
 		if isInt(b) {
 			*val = int(d.decodeInt(b))
+			return
 		}
 
 	case *int8:
 		switch {
 		case isNum(b):
 			*val = int8(d.decodeInt1(b))
+			return
 		case b == cInt8:
 			*val = int8(d.decodeInt8(b))
+			return
 		}
 
 	case *int16:
 		switch {
 		case isNum(b):
 			*val = int16(d.decodeInt1(b))
+			return
 		case b == cInt8:
 			*val = int16(d.decodeInt8(b))
+			return
 		case b == cInt16:
 			*val = int16(d.decodeInt16(b))
+			return
 		}
 
 	case *int32:
 		switch {
 		case isNum(b):
 			*val = int32(d.decodeInt1(b))
+			return
 		case b == cInt8:
 			*val = int32(d.decodeInt8(b))
+			return
 		case b == cInt16:
 			*val = int32(d.decodeInt16(b))
+			return
 		case b == cInt32:
 			*val = int32(d.decodeInt32(b))
+			return
 		}
 
 	case *int64:
 		switch {
 		case isNum(b):
 			*val = int64(d.decodeInt1(b))
+			return
 		case b == cInt8:
 			*val = int64(d.decodeInt8(b))
+			return
 		case b == cInt16:
 			*val = int64(d.decodeInt16(b))
+			return
 		case b == cInt32:
 			*val = int64(d.decodeInt32(b))
+			return
 		case b == cInt64:
 			*val = int64(d.decodeInt64(b))
+			return
 		}
 
 	case *uint:
 		if isUint(b) {
 			*val = uint(d.decodeUint(b))
+			return
 		}
 
 	case *uint8:
 		switch {
 		case isNum(b):
 			*val = uint8(d.decodeUint1(b))
+			return
 		case b == cUint8:
 			*val = uint8(d.decodeUint8(b))
+			return
 		}
 
 	case *uint16:
 		switch {
 		case isNum(b):
 			*val = uint16(d.decodeUint1(b))
+			return
 		case b == cUint8:
 			*val = uint16(d.decodeUint8(b))
+			return
 		case b == cUint16:
 			*val = uint16(d.decodeUint16(b))
+			return
 		}
 
 	case *uint32:
 		switch {
 		case isNum(b):
 			*val = uint32(d.decodeUint1(b))
+			return
 		case b == cUint8:
 			*val = uint32(d.decodeUint8(b))
+			return
 		case b == cUint16:
 			*val = uint32(d.decodeUint16(b))
+			return
 		case b == cUint32:
 			*val = uint32(d.decodeUint32(b))
+			return
 		}
 
 	case *uint64:
 		switch {
 		case isNum(b):
 			*val = uint64(d.decodeUint1(b))
+			return
 		case b == cUint8:
 			*val = uint64(d.decodeUint8(b))
+			return
 		case b == cUint16:
 			*val = uint64(d.decodeUint16(b))
+			return
 		case b == cUint32:
 			*val = uint64(d.decodeUint32(b))
+			return
 		case b == cUint64:
 			*val = uint64(d.decodeUint64(b))
+			return
 		}
 
 	case *float32:
 		switch {
 		case b == cFloat32:
 			*val = float32(d.decodeFloat32(b))
+			return
 		}
 
 	case *float64:
 		switch {
 		case b == cFloat32:
 			*val = float64(d.decodeFloat32(b))
+			return
 		case b == cFloat64:
 			*val = float64(d.decodeFloat64(b))
+			return
 		}
+
+	case *complex64:
+		switch {
+		case b == cComplex64:
+			*val = complex64(d.decodeComplex64(b))
+			return
+		}
+
+	case *complex128:
+		switch {
+		case b == cComplex64:
+			*val = complex128(d.decodeComplex64(b))
+			return
+		case b == cComplex128:
+			*val = complex128(d.decodeComplex128(b))
+			return
+		}
+
+	// ---------------------------------------------
+	// Include common slice types
+	// ---------------------------------------------
 
 	case *[]interface{}:
-		if b == cArrNil {
+		if b == cArr {
 			*val = d.decodeArrNil(b)
+			return
 		}
 	case *[]bool:
-		if b == cArrBool {
-			*val = d.decodeArrBool(b)
+		if b == cArr {
+			*val = d.decodeArrVal(b)
+			return
 		}
 	case *[]string:
-		if b == cArrStr {
+		if b == cArr {
+			// d.decodeArrStr(b, val)
 			*val = d.decodeArrStr(b)
+			return
 		}
 	case *[]int:
-		if b == cArrInt {
+		if b == cArr {
 			*val = d.decodeArrInt(b)
+			return
 		}
 	case *[]int8:
-		if b == cArrInt8 {
+		if b == cArr {
 			*val = d.decodeArrInt8(b)
+			return
 		}
 	case *[]int16:
-		if b == cArrInt16 {
+		if b == cArr {
 			*val = d.decodeArrInt16(b)
+			return
 		}
 	case *[]int32:
-		if b == cArrInt32 {
+		if b == cArr {
 			*val = d.decodeArrInt32(b)
+			return
 		}
 	case *[]int64:
-		if b == cArrInt64 {
+		if b == cArr {
 			*val = d.decodeArrInt64(b)
+			return
 		}
 	case *[]uint:
-		if b == cArrUint {
+		if b == cArr {
 			*val = d.decodeArrUint(b)
+			return
 		}
 	case *[]uint16:
-		if b == cArrUint16 {
+		if b == cArr {
 			*val = d.decodeArrUint16(b)
+			return
 		}
 	case *[]uint32:
-		if b == cArrUint32 {
+		if b == cArr {
 			*val = d.decodeArrUint32(b)
+			return
 		}
 	case *[]uint64:
-		if b == cArrUint64 {
+		if b == cArr {
 			*val = d.decodeArrUint64(b)
+			return
 		}
 	case *[]float32:
-		if b == cArrFloat32 {
+		if b == cArr {
 			*val = d.decodeArrFloat32(b)
+			return
 		}
 	case *[]float64:
-		if b == cArrFloat64 {
+		if b == cArr {
 			*val = d.decodeArrFloat64(b)
+			return
+		}
+	case *[]complex64:
+		if b == cArr {
+			*val = d.decodeArrComplex64(b)
+			return
+		}
+	case *[]complex128:
+		if b == cArr {
+			*val = d.decodeArrComplex128(b)
+			return
 		}
 	case *[]time.Time:
-		if b == cArrTime {
+		if b == cArr {
 			*val = d.decodeArrTime(b)
+			return
 		}
 
+	// ---------------------------------------------
+	// Include common map[string]<T> types
+	// ---------------------------------------------
+
 	case *map[string]int:
-		if b == cMapStrInt {
+		if b == cMap {
 			*val = d.decodeMapStrInt(b)
+			return
+		}
+	case *map[string]uint:
+		if b == cMap {
+			*val = d.decodeMapStrUint(b)
+			return
 		}
 	case *map[string]bool:
-		if b == cMapStrBool {
-			*val = d.decodeMapStrBool(b)
+		if b == cMap {
+			*val = d.decodeMapStrVal(b)
+			return
 		}
 	case *map[string]string:
-		if b == cMapStrStr {
+		if b == cMap {
 			*val = d.decodeMapStrStr(b)
+			return
 		}
 	case *map[string]interface{}:
-		if b == cMapStrNil {
+		if b == cMap {
 			*val = d.decodeMapStrNil(b)
+			return
 		}
+
+	// ---------------------------------------------
+	// Include common map[<T>]interface{} types
+	// ---------------------------------------------
+
 	case *map[interface{}]interface{}:
-		if b == cMapNilNil {
+		if b == cMap {
 			*val = d.decodeMapNilNil(b)
+			return
 		}
+
+	// ---------------------------------------------
+	// Include nil interface{} type decoding
+	// ---------------------------------------------
 
 	case *interface{}:
 
 		switch {
 		case b == cNil:
 			*val = nil
+			return
 		case b == cTrue:
 			*val = d.decodeVal(b)
+			return
 		case b == cFalse:
 			*val = d.decodeVal(b)
+			return
 		case b == cTime:
 			*val = d.decodeTime(b)
+			return
 
 		case isBin(b):
 			*val = d.decodeBin(b)
+			return
 		case isStr(b):
 			*val = d.decodeStr(b)
+			return
 		case isExt(b):
 			*val = d.decodeExt(b)
+			return
 
 		case isNum(b):
 			*val = d.decodeInt1(b)
+			return
 		case b == cInt8:
 			*val = d.decodeInt8(b)
+			return
 		case b == cInt16:
 			*val = d.decodeInt16(b)
+			return
 		case b == cInt32:
 			*val = d.decodeInt32(b)
+			return
 		case b == cInt64:
 			*val = d.decodeInt64(b)
+			return
 		case b == cUint8:
 			*val = d.decodeUint8(b)
+			return
 		case b == cUint16:
 			*val = d.decodeUint16(b)
+			return
 		case b == cUint32:
 			*val = d.decodeUint32(b)
+			return
 		case b == cUint64:
 			*val = d.decodeUint64(b)
+			return
 		case b == cFloat32:
 			*val = d.decodeFloat32(b)
+			return
 		case b == cFloat64:
 			*val = d.decodeFloat64(b)
+			return
+		case b == cComplex64:
+			*val = d.decodeComplex64(b)
+			return
+		case b == cComplex128:
+			*val = d.decodeComplex128(b)
+			return
 
-		case b == cArr:
-		case b == cArrNil:
-			*val = d.decodeArrNil(b)
-		case b == cArrBool:
-			*val = d.decodeArrBool(b)
-		case b == cArrStr:
-			*val = d.decodeArrStr(b)
-		case b == cArrInt:
-			*val = d.decodeArrInt(b)
-		case b == cArrInt8:
-			*val = d.decodeArrInt8(b)
-		case b == cArrInt16:
-			*val = d.decodeArrInt16(b)
-		case b == cArrInt32:
-			*val = d.decodeArrInt32(b)
-		case b == cArrInt64:
-			*val = d.decodeArrInt64(b)
-		case b == cArrUint:
-			*val = d.decodeArrUint(b)
-		case b == cArrUint16:
-			*val = d.decodeArrUint16(b)
-		case b == cArrUint32:
-			*val = d.decodeArrUint32(b)
-		case b == cArrUint64:
-			*val = d.decodeArrUint64(b)
-		case b == cArrFloat32:
-			*val = d.decodeArrFloat32(b)
-		case b == cArrFloat64:
-			*val = d.decodeArrFloat64(b)
-		case b == cArrTime:
-			*val = d.decodeArrTime(b)
+		case isArr(b):
+			*val = d.decodeArr(b)
+			return
+		case isMap(b):
+			*val = d.decodeMap(b)
+			return
 
-		case b == cMap:
-		case b == cMapStrInt:
-			*val = d.decodeMapStrInt(b)
-		case b == cMapStrBool:
-			*val = d.decodeMapStrBool(b)
-		case b == cMapStrStr:
-			*val = d.decodeMapStrStr(b)
-		case b == cMapStrNil:
-			*val = d.decodeMapStrNil(b)
-		case b == cMapNilNil:
-			*val = d.decodeMapNilNil(b)
 		}
+
+	// ---------------------------------------------
+	// Use reflect for any remaining types
+	// ---------------------------------------------
 
 	default:
-
-		if reflect.TypeOf(dst).Kind() == reflect.Ptr {
-			item := reflect.ValueOf(dst).Elem()
-			kind := item.Type()
-			d.decodeStructMap(b, kind, item)
-		}
+		d.decodeRef(b, reflect.ValueOf(dst))
+		return
 
 	}
 
-	return
+	panic(fmt.Errorf("Can't decode into %T", dst))
 
 }
 
@@ -427,34 +512,28 @@ func (d *Decoder) decodeBit() (val byte) {
 }
 
 func (d *Decoder) decodeVal(b byte) (val bool) {
-	switch {
-	case b == cTrue:
-		return true
-	case b == cFalse:
-		return false
-	}
-	return
+	return b == cTrue
 }
 
 func (d *Decoder) decodeBin(b byte) (val []byte) {
 	var sze int
 	switch {
-	case b >= cFixBin && b <= cFixBin+0x1F:
+	case b >= cFixBin && b <= cFixBin+fixedBin:
 		sze = int(b - cFixBin)
 	case b == cBin8:
-		var tmp int8
+		var tmp uint8
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cBin16:
-		var tmp int16
+		var tmp uint16
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cBin32:
-		var tmp int32
+		var tmp uint32
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cBin64:
-		var tmp int64
+		var tmp uint64
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
@@ -465,22 +544,22 @@ func (d *Decoder) decodeBin(b byte) (val []byte) {
 func (d *Decoder) decodeStr(b byte) (val string) {
 	var sze int
 	switch {
-	case b >= cFixStr && b <= cFixStr+0x1F:
+	case b >= cFixStr && b <= cFixStr+fixedStr:
 		sze = int(b - cFixStr)
 	case b == cStr8:
-		var tmp int8
+		var tmp uint8
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cStr16:
-		var tmp int16
+		var tmp uint16
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cStr32:
-		var tmp int32
+		var tmp uint32
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	case b == cStr64:
-		var tmp int64
+		var tmp uint64
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
@@ -488,35 +567,36 @@ func (d *Decoder) decodeStr(b byte) (val string) {
 	return string(bin)
 }
 
-func (d *Decoder) decodeExt(b byte) (val interface{}) {
-
+func (d *Decoder) decodeExt(b byte) (val Corker) {
 	var sze int
-
 	switch {
-	case b >= cFixStr && b <= cFixStr+0x1F:
-		sze = int(b - cFixStr)
-	case b == cStr8:
-		var tmp int8
+	case b >= cFixExt && b <= cFixExt+fixedExt:
+		sze = int(b - cFixExt)
+	case b == cExt8:
+		var tmp uint8
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
-	case b == cStr16:
-		var tmp int16
+	case b == cExt16:
+		var tmp uint16
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
-	case b == cStr32:
-		var tmp int32
+	case b == cExt32:
+		var tmp uint32
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
-	case b == cStr64:
-		var tmp int64
+	case b == cExt64:
+		var tmp uint64
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
-
+	bit := d.r.ReadOne()
 	bin := d.r.ReadMany(sze)
-
-	return string(bin)
-
+	obj := reflect.New(registry[bit]).Interface().(Corker)
+	err := obj.UnmarshalCORK(bin)
+	if err != nil {
+		panic(err)
+	}
+	return obj
 }
 
 func (d *Decoder) decodeInt(b byte) (val int) {
@@ -615,6 +695,34 @@ func (d *Decoder) decodeFloat64(b byte) (val float64) {
 	return
 }
 
+func (d *Decoder) decodeComplex64(b byte) (val complex64) {
+	binary.Read(d.r, binary.BigEndian, &val)
+	return
+}
+
+func (d *Decoder) decodeComplex128(b byte) (val complex128) {
+	binary.Read(d.r, binary.BigEndian, &val)
+	return
+}
+
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+
+func (d *Decoder) decodeArr(b byte) (val interface{}) {
+	if d.h.ArrType != nil {
+		switch d.h.ArrType.(type) {
+		default:
+			return d.decodeArrNil(b)
+		case reflect.Type:
+			return d.decodeArrUnk(b)
+		}
+	}
+	return d.decodeArrNil(b)
+}
+
 func (d *Decoder) decodeArrNil(b byte) (val []interface{}) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
@@ -625,13 +733,12 @@ func (d *Decoder) decodeArrNil(b byte) (val []interface{}) {
 	return arr
 }
 
-func (d *Decoder) decodeArrBool(b byte) (val []bool) {
+func (d *Decoder) decodeArrVal(b byte) (val []bool) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
 	arr := make([]bool, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = d.decodeVal(nxt)
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -641,8 +748,7 @@ func (d *Decoder) decodeArrStr(b byte) (val []string) {
 	tot := d.decodeInt(nxt)
 	arr := make([]string, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = d.decodeStr(nxt)
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -652,8 +758,7 @@ func (d *Decoder) decodeArrInt(b byte) (val []int) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = int(d.decodeInt(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -663,8 +768,7 @@ func (d *Decoder) decodeArrInt8(b byte) (val []int8) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int8, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = int8(d.decodeInt(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -674,8 +778,7 @@ func (d *Decoder) decodeArrInt16(b byte) (val []int16) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int16, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = int16(d.decodeInt(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -685,8 +788,7 @@ func (d *Decoder) decodeArrInt32(b byte) (val []int32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int32, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = int32(d.decodeInt(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -696,8 +798,7 @@ func (d *Decoder) decodeArrInt64(b byte) (val []int64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int64, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = int64(d.decodeInt(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -707,8 +808,17 @@ func (d *Decoder) decodeArrUint(b byte) (val []uint) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = uint(d.decodeUint(nxt))
+		d.decode(&arr[i])
+	}
+	return arr
+}
+
+func (d *Decoder) decodeArrUint8(b byte) (val []uint8) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	arr := make([]uint8, tot)
+	for i := 0; i < tot; i++ {
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -718,8 +828,7 @@ func (d *Decoder) decodeArrUint16(b byte) (val []uint16) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint16, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = uint16(d.decodeUint(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -729,8 +838,7 @@ func (d *Decoder) decodeArrUint32(b byte) (val []uint32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint32, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = uint32(d.decodeUint(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -740,8 +848,7 @@ func (d *Decoder) decodeArrUint64(b byte) (val []uint64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint64, tot)
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		arr[i] = uint64(d.decodeUint(nxt))
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -751,7 +858,7 @@ func (d *Decoder) decodeArrFloat32(b byte) (val []float32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]float32, tot)
 	for i := 0; i < tot; i++ {
-		arr[i] = d.decodeFloat32(nxt)
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -761,7 +868,27 @@ func (d *Decoder) decodeArrFloat64(b byte) (val []float64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]float64, tot)
 	for i := 0; i < tot; i++ {
-		arr[i] = d.decodeFloat64(nxt)
+		d.decode(&arr[i])
+	}
+	return arr
+}
+
+func (d *Decoder) decodeArrComplex64(b byte) (val []complex64) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	arr := make([]complex64, tot)
+	for i := 0; i < tot; i++ {
+		d.decode(&arr[i])
+	}
+	return arr
+}
+
+func (d *Decoder) decodeArrComplex128(b byte) (val []complex128) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	arr := make([]complex128, tot)
+	for i := 0; i < tot; i++ {
+		d.decode(&arr[i])
 	}
 	return arr
 }
@@ -771,48 +898,40 @@ func (d *Decoder) decodeArrTime(b byte) (val []time.Time) {
 	tot := d.decodeInt(nxt)
 	arr := make([]time.Time, tot)
 	for i := 0; i < tot; i++ {
-		arr[i] = d.decodeTime(nxt)
+		d.decode(&arr[i])
 	}
 	return arr
 }
 
-func (d *Decoder) decodeMapStrInt(b byte) (val map[string]int) {
-	nxt := d.decodeBit()
-	tot := d.decodeInt(nxt)
-	obj := make(map[string]int)
-	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		k := d.decodeStr(nxt)
-		nxt = d.decodeBit()
-		v := d.decodeInt(nxt)
-		obj[k] = v
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+
+func (d *Decoder) decodeMap(b byte) (val interface{}) {
+	if d.h.MapType != nil {
+		switch d.h.MapType.(type) {
+		default:
+			return d.decodeMapNilNil(b)
+		case map[string]interface{}:
+			return d.decodeMapStrNil(b)
+		case reflect.Type:
+			return d.decodeMapUnk(b)
+		}
 	}
-	return obj
+	return d.decodeMapNilNil(b)
 }
 
-func (d *Decoder) decodeMapStrBool(b byte) (val map[string]bool) {
+func (d *Decoder) decodeMapNilNil(b byte) (val map[interface{}]interface{}) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]bool)
+	obj := make(map[interface{}]interface{})
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		k := d.decodeStr(nxt)
-		nxt = d.decodeBit()
-		v := d.decodeVal(nxt)
-		obj[k] = v
-	}
-	return obj
-}
-
-func (d *Decoder) decodeMapStrStr(b byte) (val map[string]string) {
-	nxt := d.decodeBit()
-	tot := d.decodeInt(nxt)
-	obj := make(map[string]string)
-	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		k := d.decodeStr(nxt)
-		nxt = d.decodeBit()
-		v := d.decodeStr(nxt)
+		var k interface{}
+		var v interface{}
+		d.decode(&k)
+		d.decode(&v)
 		obj[k] = v
 	}
 	return obj
@@ -823,37 +942,188 @@ func (d *Decoder) decodeMapStrNil(b byte) (val map[string]interface{}) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]interface{})
 	for i := 0; i < tot; i++ {
-		nxt = d.decodeBit()
-		k := d.decodeStr(nxt)
+		var k string
 		var v interface{}
+		d.decode(&k)
 		d.decode(&v)
 		obj[k] = v
 	}
 	return obj
 }
 
-func (d *Decoder) decodeMapNilNil(b byte) (val map[interface{}]interface{}) {
+func (d *Decoder) decodeMapStrVal(b byte) (val map[string]bool) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[interface{}]interface{})
+	obj := make(map[string]bool)
 	for i := 0; i < tot; i++ {
-		var k interface{}
+		var k string
+		var v bool
 		d.decode(&k)
-		var v interface{}
 		d.decode(&v)
 		obj[k] = v
 	}
 	return obj
 }
 
-func (d *Decoder) decodeStructMap(b byte, kind reflect.Type, item reflect.Value) {
+func (d *Decoder) decodeMapStrStr(b byte) (val map[string]string) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	obj := make(map[string]string)
+	for i := 0; i < tot; i++ {
+		var k string
+		var v string
+		d.decode(&k)
+		d.decode(&v)
+		obj[k] = v
+	}
+	return obj
+}
 
+func (d *Decoder) decodeMapStrInt(b byte) (val map[string]int) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	obj := make(map[string]int)
+	for i := 0; i < tot; i++ {
+		var k string
+		var v int
+		d.decode(&k)
+		d.decode(&v)
+		obj[k] = v
+	}
+	return obj
+}
+
+func (d *Decoder) decodeMapStrUint(b byte) (val map[string]uint) {
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	obj := make(map[string]uint)
+	for i := 0; i < tot; i++ {
+		var k string
+		var v uint
+		d.decode(&k)
+		d.decode(&v)
+		obj[k] = v
+	}
+	return obj
+}
+
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
+
+func (d *Decoder) decodeRef(b byte, val reflect.Value) {
+
+	switch val.Type().Kind() {
+
+	case reflect.Ptr:
+		if val.Elem().IsValid() {
+			d.decodeRef(b, val.Elem())
+		} else {
+			val.Set(reflect.ValueOf(d.decodeExt(b)))
+		}
+		return
+
+	case reflect.Map:
+		d.decodeMapAny(b, val)
+		return
+
+	case reflect.Slice:
+		d.decodeArrAny(b, val)
+		return
+
+	case reflect.Struct:
+		if _, ok := val.Addr().Interface().(Corker); ok {
+			val.Set(reflect.ValueOf(d.decodeExt(b)).Elem())
+		} else {
+			d.decodeStructMap(b, val)
+		}
+		return
+
+	}
+
+}
+
+func (d *Decoder) decodeArrUnk(b byte) (val interface{}) {
+	typ := d.h.ArrType.(reflect.Type)
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	arr := reflect.MakeSlice(typ, tot, tot)
+	for i := 0; i < tot; i++ {
+		if typ.Elem().Kind() == reflect.Ptr {
+			v := reflect.New(typ.Elem().Elem())
+			d.decode(v.Interface())
+			arr.Index(i).Set(v)
+		} else {
+			v := reflect.New(typ.Elem())
+			d.decode(v.Interface())
+			arr.Index(i).Set(v.Elem())
+		}
+	}
+	return arr.Interface()
+}
+
+func (d *Decoder) decodeArrAny(b byte, arr reflect.Value) {
+	typ := arr.Type()
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	if arr.IsNil() {
+		arr.Set(reflect.MakeSlice(typ, tot, tot))
+	}
+	for i := 0; i < tot; i++ {
+		if typ.Elem().Kind() == reflect.Ptr {
+			v := reflect.New(typ.Elem().Elem())
+			d.decode(v.Interface())
+			arr.Index(i).Set(v)
+		} else {
+			v := reflect.New(typ.Elem())
+			d.decode(v.Interface())
+			arr.Index(i).Set(v.Elem())
+		}
+	}
+}
+
+func (d *Decoder) decodeMapUnk(b byte) (val interface{}) {
+	typ := d.h.MapType.(reflect.Type)
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	obj := reflect.MakeMap(typ)
+	for i := 0; i < tot; i++ {
+		k := reflect.New(typ.Key())
+		d.decode(k.Interface())
+		v := reflect.New(typ.Elem())
+		d.decode(v.Interface())
+		obj.SetMapIndex(k.Elem(), v.Elem())
+	}
+	return obj.Interface()
+}
+
+func (d *Decoder) decodeMapAny(b byte, obj reflect.Value) {
+	typ := obj.Type()
+	nxt := d.decodeBit()
+	tot := d.decodeInt(nxt)
+	if obj.IsNil() {
+		obj.Set(reflect.MakeMap(typ))
+	}
+	for i := 0; i < tot; i++ {
+		k := reflect.New(typ.Key())
+		d.decode(k.Interface())
+		v := reflect.New(typ.Elem())
+		d.decode(v.Interface())
+		obj.SetMapIndex(k.Elem(), v.Elem())
+	}
+}
+
+func (d *Decoder) decodeStructMap(b byte, item reflect.Value) {
+
+	typ := item.Type()
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]*field)
 
 	for i := 0; i < item.NumField(); i++ {
-		if fld := newField(kind.Field(i), item.Field(i)); fld != nil {
+		if fld := newField(typ.Field(i), item.Field(i)); fld != nil {
 			obj[fld.Show()] = fld
 		}
 	}
@@ -862,90 +1132,26 @@ func (d *Decoder) decodeStructMap(b byte, kind reflect.Type, item reflect.Value)
 
 		nxt = d.decodeBit()
 		k := d.decodeStr(nxt)
-		var v interface{}
-		d.decode(&v)
 
 		if itm, ok := obj[k]; ok {
+
 			fld := item.FieldByName(itm.Name())
+
+			// Println(i, itm, fld, fld.Interface())
+			// Printf("%T %v \n", itm, item)
+			// Printf("%T %v \n", fld, fld)
+			// Printf("%T %v \n", fld.Interface(), fld.Interface())
+			// Printf("%T %v \n", fld.Addr().Interface(), fld.Addr().Interface())
+			// Println("---")
+
 			if fld.CanSet() {
-
-				l := fld.Type().Kind()
-				r := reflect.TypeOf(v).Kind()
-
-				switch l {
-				case r:
-					fld.Set(reflect.ValueOf(v))
-				case reflect.Int:
-					switch o := v.(type) {
-					case int:
-						fld.Set(reflect.ValueOf(int(o)))
-					case int8:
-						fld.Set(reflect.ValueOf(int(o)))
-					case int16:
-						fld.Set(reflect.ValueOf(int(o)))
-					case int32:
-						fld.Set(reflect.ValueOf(int(o)))
-					}
-				case reflect.Int16:
-					switch o := v.(type) {
-					case int8:
-						fld.Set(reflect.ValueOf(int16(o)))
-					}
-				case reflect.Int32:
-					switch o := v.(type) {
-					case int8:
-						fld.Set(reflect.ValueOf(int32(o)))
-					case int16:
-						fld.Set(reflect.ValueOf(int32(o)))
-					}
-				case reflect.Int64:
-					switch o := v.(type) {
-					case int:
-						fld.Set(reflect.ValueOf(int64(o)))
-					case int8:
-						fld.Set(reflect.ValueOf(int64(o)))
-					case int16:
-						fld.Set(reflect.ValueOf(int64(o)))
-					case int32:
-						fld.Set(reflect.ValueOf(int64(o)))
-					}
-				case reflect.Uint:
-					switch o := v.(type) {
-					case uint:
-						fld.Set(reflect.ValueOf(uint(o)))
-					case uint8:
-						fld.Set(reflect.ValueOf(uint(o)))
-					case uint16:
-						fld.Set(reflect.ValueOf(uint(o)))
-					case uint32:
-						fld.Set(reflect.ValueOf(uint(o)))
-					}
-				case reflect.Uint16:
-					switch o := v.(type) {
-					case uint8:
-						fld.Set(reflect.ValueOf(uint16(o)))
-					}
-				case reflect.Uint32:
-					switch o := v.(type) {
-					case uint8:
-						fld.Set(reflect.ValueOf(uint32(o)))
-					case uint16:
-						fld.Set(reflect.ValueOf(uint32(o)))
-					}
-				case reflect.Uint64:
-					switch o := v.(type) {
-					case uint:
-						fld.Set(reflect.ValueOf(uint64(o)))
-					case uint8:
-						fld.Set(reflect.ValueOf(uint64(o)))
-					case uint16:
-						fld.Set(reflect.ValueOf(uint64(o)))
-					case uint32:
-						fld.Set(reflect.ValueOf(uint64(o)))
-					}
+				if fld.CanAddr() {
+					d.decode(fld.Addr().Interface())
+				} else {
+					d.decode(fld.Interface())
 				}
-
 			}
+
 		}
 
 	}

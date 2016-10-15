@@ -17,15 +17,16 @@ package cork
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"math"
 	"reflect"
-	"sort"
 	"time"
 )
 
 // Encoder represents a CORK encoder.
 type Encoder struct {
+	h *Handle
 	w *writer
 }
 
@@ -37,69 +38,69 @@ func Encode(src interface{}) (dst []byte) {
 }
 
 // NewEncoder returns an Encoder for encoding into an io.Writer.
-func NewEncoder(dst io.Writer) *Encoder {
-	return &Encoder{w: newWriter(dst)}
+func NewEncoder(w io.Writer) *Encoder {
+	return &Encoder{
+		w: newWriter(w),
+		h: &Handle{
+			Precision: false,
+		},
+	}
 }
 
-// Encode writes an object into a stream.
-//
-// Encoding can be configured via the struct tag for the fields.
-// The "codec" key in struct field's tag value is the key name,
-// followed by an optional comma and options.
-// Note that the "json" key is used in the absence of the "codec" key.
-//
-// Struct values "usually" encode as maps. Each exported struct field is encoded unless:
-//    - the field's tag is "-", OR
-//    - the field is empty (empty or the zero value) and its tag specifies the "omitempty" option.
-//
-// When encoding as a map, the first string in the tag (before the comma)
-// is the map key string to use when encoding.
-//
-// However, struct values may encode as arrays. This happens when:
-//    - StructToArray Encode option is set, OR
-//    - the tag on the _struct field sets the "toarray" option
-//
-// Values with types that implement MapBySlice are encoded as stream maps.
-//
-// The empty values (for omitempty option) are false, 0, any nil pointer
-// or interface value, and any array, slice, map, or string of length zero.
-//
-// Anonymous fields are encoded inline except:
-//    - the struct tag specifies a replacement name (first value)
-//    - the field is of an interface type
-//
-// Examples:
-//
-//      // NOTE: 'json:' can be used as struct tag key, in place 'codec:' below.
-//      type MyStruct struct {
-//          _struct bool    `codec:",omitempty"`   //set omitempty for every field
-//          Field1 string   `codec:"-"`            //skip this field
-//          Field2 int      `codec:"myName"`       //Use key "myName" in encode stream
-//          Field3 int32    `codec:",omitempty"`   //use key "Field3". Omit if empty.
-//          Field4 bool     `codec:"f4,omitempty"` //use key "f4". Omit if empty.
-//          io.Reader                              //use key "Reader".
-//          MyStruct        `codec:"my1"           //use key "my1".
-//          MyStruct                               //inline it
-//          ...
-//      }
-//
-//      type MyStruct struct {
-//          _struct bool    `codec:",omitempty,toarray"`   //set omitempty for every field
-//                                                         //and encode struct as an array
-//      }
-//
-// The mode of encoding is based on the type of the value. When a value is seen:
-//   - If a Selfer, call its CodecEncodeSelf method
-//   - If an extension is registered for it, call that extension function
-//   - If it implements encoding.(Binary|Text|JSON)Marshaler, call its Marshal(Binary|Text|JSON) method
-//   - Else encode it based on its reflect.Kind
-//
-// Note that struct field names and keys in map[string]XXX will be treated as symbols.
-// Some formats support symbols (e.g. binc) and will properly encode the string
-// only once in the stream, and use a tag to refer to it thereafter.
-//
+// Options sets the configuration options that the Encoder should use.
+func (e *Encoder) Options(h *Handle) *Encoder {
+	e.h = h
+	return e
+}
+
+/*
+Encode encodes the 'src' object into the stream.
+
+The decoder can be configured using struct tags. The 'cork' key if found will be
+analysed for any configuration options when encoding.
+
+Each exported struct field is encoded unless:
+	- the field's tag is "-"
+	- the field is empty and its tag specifies the "omitempty" option.
+
+When encoding a struct as a map, the first string in the tag (before the comma)
+will be used for the map key, and if not specified will default to the struct key
+name.
+
+The empty values (for omitempty option) are false, 0, any nil pointer or
+interface value, and any array, slice, map, or string of length zero.
+
+	type Tester struct {
+		Test bool   `cork:"-"`              // Skip this field
+		Name string `cork:"name"`           // Use key "name" in encode stream
+		Size int32  `cork:"size"`           // Use key "size" in encode stream
+		Data []byte `cork:"data,omitempty"` // Use key data in encode stream, and omit if empty
+	}
+
+Example:
+
+	// Encoding a typed value
+	var s string = "Hello"
+	buf := bytes.NewBuffer(nil)
+	err = codec.NewEncoder(buf).Encode(s)
+
+	// Encoding a struct
+	var t &Tester{Name: "Temp", Size: 0}
+	buf := bytes.NewBuffer(nil)
+	err = codec.NewEncoder(buf).Encode(t)
+
+*/
 func (e *Encoder) Encode(src interface{}) (err error) {
-	// TODO need to catch panics and enable errors in encoder
+	defer func() {
+		if r := recover(); r != nil {
+			if catch, ok := r.(string); ok {
+				err = fmt.Errorf(catch)
+			}
+			if catch, ok := r.(error); ok {
+				err = catch
+			}
+		}
+	}()
 	e.encode(src)
 	return
 }
@@ -107,9 +108,6 @@ func (e *Encoder) Encode(src interface{}) (err error) {
 func (e *Encoder) encode(src interface{}) {
 
 	switch val := src.(type) {
-
-	case Corker:
-		e.encodeExt(val)
 
 	case nil:
 		e.encodeBit(cNil)
@@ -127,208 +125,256 @@ func (e *Encoder) encode(src interface{}) {
 		e.encodeInt(val)
 
 	case int8:
-		e.encodeInt(int(val))
+		e.encodeInt8(val)
 
 	case int16:
-		e.encodeInt(int(val))
+		e.encodeInt16(val)
 
 	case int32:
-		e.encodeInt(int(val))
+		e.encodeInt32(val)
 
 	case int64:
-		e.encodeInt(int(val))
+		e.encodeInt64(val)
 
 	case uint:
 		e.encodeUint(val)
 
 	case uint8:
-		e.encodeUint(uint(val))
+		e.encodeUint8(val)
 
 	case uint16:
-		e.encodeUint(uint(val))
+		e.encodeUint16(val)
 
 	case uint32:
-		e.encodeUint(uint(val))
+		e.encodeUint32(val)
 
 	case uint64:
-		e.encodeUint(uint(val))
+		e.encodeUint64(val)
 
 	case float32:
-		e.encodeBit(cFloat32)
 		e.encodeFloat32(val)
 
 	case float64:
-		e.encodeBit(cFloat64)
 		e.encodeFloat64(val)
 
+	case complex64:
+		e.encodeComplex64(val)
+
+	case complex128:
+		e.encodeComplex128(val)
+
 	case time.Time:
-		e.encodeBit(cTime)
 		e.encodeTime(val)
 
+	// ---------------------------------------------
+	// Include common slice types
+	// ---------------------------------------------
+
 	case []bool:
-		e.encodeBit(cArrBool)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encodeVal(v)
 		}
 
 	case []string:
-		e.encodeBit(cArrStr)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encodeStr(v)
 		}
 
 	case []int:
-		e.encodeBit(cArrInt)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeInt(int(v))
+			e.encodeInt(v)
 		}
 
 	case []int8:
-		e.encodeBit(cArrInt8)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeInt(int(v))
+			e.encodeInt8(v)
 		}
 
 	case []int16:
-		e.encodeBit(cArrInt16)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeInt(int(v))
+			e.encodeInt16(v)
 		}
 
 	case []int32:
-		e.encodeBit(cArrInt32)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeInt(int(v))
+			e.encodeInt32(v)
 		}
 
 	case []int64:
-		e.encodeBit(cArrInt64)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeInt(int(v))
+			e.encodeInt64(v)
 		}
 
 	case []uint:
-		e.encodeBit(cArrUint)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeUint(uint(v))
+			e.encodeUint(v)
 		}
 
 	case []uint16:
-		e.encodeBit(cArrUint16)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeUint(uint(v))
+			e.encodeUint16(v)
 		}
 
 	case []uint32:
-		e.encodeBit(cArrUint32)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeUint(uint(v))
+			e.encodeUint32(v)
 		}
 
 	case []uint64:
-		e.encodeBit(cArrUint64)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
-			e.encodeUint(uint(v))
+			e.encodeUint64(v)
 		}
 
 	case []float32:
-		e.encodeBit(cArrFloat32)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encodeFloat32(v)
 		}
 
 	case []float64:
-		e.encodeBit(cArrFloat64)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encodeFloat64(v)
 		}
 
+	case []complex64:
+		e.encodeBit(cArr)
+		e.encodeLen(len(val))
+		for _, v := range val {
+			e.encodeComplex64(v)
+		}
+
+	case []complex128:
+		e.encodeBit(cArr)
+		e.encodeLen(len(val))
+		for _, v := range val {
+			e.encodeComplex128(v)
+		}
+
 	case []time.Time:
-		e.encodeBit(cArrTime)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encodeTime(v)
 		}
 
 	case []interface{}:
-		e.encodeBit(cArrNil)
+		e.encodeBit(cArr)
 		e.encodeLen(len(val))
 		for _, v := range val {
 			e.encode(v)
 		}
 
-	case map[string]bool:
-		set := make([]string, 0, len(val))
-		e.encodeBit(cMapStrBool)
-		e.encodeLen(len(val))
-		for k := range val {
-			set = append(set, k)
-		}
-		sort.Strings(set)
-		for _, v := range set {
-			e.encodeStr(v)
-			e.encodeVal(val[v])
-		}
+	// ---------------------------------------------
+	// Include common map[string]<T> types
+	// ---------------------------------------------
 
 	case map[string]int:
-		set := make([]string, 0, len(val))
-		e.encodeBit(cMapStrInt)
+		e.encodeBit(cMap)
 		e.encodeLen(len(val))
-		for k := range val {
-			set = append(set, k)
+		for k, v := range val {
+			e.encodeStr(k)
+			e.encodeInt(v)
 		}
-		sort.Strings(set)
-		for _, v := range set {
-			e.encodeStr(v)
-			e.encodeInt(val[v])
+
+	case map[string]uint:
+		e.encodeBit(cMap)
+		e.encodeLen(len(val))
+		for k, v := range val {
+			e.encodeStr(k)
+			e.encodeUint(v)
+		}
+
+	case map[string]bool:
+		e.encodeBit(cMap)
+		e.encodeLen(len(val))
+		for k, v := range val {
+			e.encodeStr(k)
+			e.encodeVal(v)
 		}
 
 	case map[string]string:
-		set := make([]string, 0, len(val))
-		e.encodeBit(cMapStrStr)
+		e.encodeBit(cMap)
 		e.encodeLen(len(val))
-		for k := range val {
-			set = append(set, k)
-		}
-		sort.Strings(set)
-		for _, v := range set {
+		for k, v := range val {
+			e.encodeStr(k)
 			e.encodeStr(v)
-			e.encodeStr(val[v])
+		}
+
+	// ---------------------------------------------
+	// Include common map[<T>]interface{} types
+	// ---------------------------------------------
+
+	case map[int]interface{}:
+		e.encodeBit(cMap)
+		e.encodeLen(len(val))
+		for k, v := range val {
+			e.encodeInt(k)
+			e.encode(v)
+		}
+
+	case map[uint]interface{}:
+		e.encodeBit(cMap)
+		e.encodeLen(len(val))
+		for k, v := range val {
+			e.encodeUint(k)
+			e.encode(v)
 		}
 
 	case map[string]interface{}:
-		set := make([]string, 0, len(val))
-		e.encodeBit(cMapStrNil)
+		e.encodeBit(cMap)
 		e.encodeLen(len(val))
-		for k := range val {
-			set = append(set, k)
-		}
-		sort.Strings(set)
-		for _, v := range set {
-			e.encodeStr(v)
-			e.encode(val[v])
+		for k, v := range val {
+			e.encodeStr(k)
+			e.encode(v)
 		}
 
+	// ---------------------------------------------
+	// Include map[interface{}]interface{} type
+	// ---------------------------------------------
+
 	case map[interface{}]interface{}:
-		e.encodeBit(cMapNilNil)
+		e.encodeBit(cMap)
 		e.encodeLen(len(val))
 		for k, v := range val {
 			e.encode(k)
 			e.encode(v)
 		}
+
+	// ---------------------------------------------
+	// Include map[interface{}]interface{} type
+	// ---------------------------------------------
+
+	case Corker:
+		e.encodeExt(val)
+
+	// ---------------------------------------------
+	// Use reflect for any remaining types
+	// ---------------------------------------------
 
 	default:
 
@@ -347,12 +393,12 @@ func (e *Encoder) encode(src interface{}) {
 
 		case reflect.Struct:
 			flds := make([]*field, 0)
-			e.encodeBit(cMapStrNil)
 			for i := 0; i < item.NumField(); i++ {
 				if fld := newField(kind.Field(i), item.Field(i)); fld != nil {
 					flds = append(flds, fld)
 				}
 			}
+			e.encodeBit(cMap)
 			e.encodeLen(len(flds))
 			for _, fld := range flds {
 				e.encode(fld.Show())
@@ -360,19 +406,10 @@ func (e *Encoder) encode(src interface{}) {
 			}
 
 		case reflect.Slice:
-			e.encodeBit(cArrNil)
-			e.encodeLen(item.Len())
-			for i := 0; i < reflect.ValueOf(src).Len(); i++ {
-				e.encode(item.Index(i).Interface())
-			}
+			e.encodeArr(src, kind, item)
 
 		case reflect.Map:
-			e.encodeBit(cMapStrNil)
-			e.encodeLen(item.Len())
-			for _, k := range item.MapKeys() {
-				e.encode(k)
-				e.encode(item.MapIndex(k))
-			}
+			e.encodeMap(src, kind, item)
 
 		}
 
@@ -382,11 +419,6 @@ func (e *Encoder) encode(src interface{}) {
 
 func (e *Encoder) encodeBit(val byte) {
 	e.w.WriteOne(val)
-	return
-}
-
-func (e *Encoder) encodeLen(val int) {
-	e.encodeInt(val)
 	return
 }
 
@@ -404,18 +436,18 @@ func (e *Encoder) encodeBin(val []byte) {
 	switch {
 	case sze <= fixedBin:
 		e.encodeBit(cFixBin + byte(sze))
-	case sze <= math.MaxInt8:
+	case sze <= math.MaxUint8:
 		e.encodeBit(cBin8)
-		binary.Write(e.w, binary.BigEndian, int8(sze))
-	case sze <= math.MaxInt16:
+		e.encodeLen8(uint8(sze))
+	case sze <= math.MaxUint16:
 		e.encodeBit(cBin16)
-		binary.Write(e.w, binary.BigEndian, int16(sze))
-	case sze <= math.MaxInt32:
+		e.encodeLen16(uint16(sze))
+	case sze <= math.MaxUint32:
 		e.encodeBit(cBin32)
-		binary.Write(e.w, binary.BigEndian, int32(sze))
+		e.encodeLen32(uint32(sze))
 	case sze <= math.MaxInt64:
 		e.encodeBit(cBin64)
-		binary.Write(e.w, binary.BigEndian, int64(sze))
+		e.encodeLen64(uint64(sze))
 	}
 	e.w.WriteMany(val)
 	return
@@ -426,99 +458,329 @@ func (e *Encoder) encodeStr(val string) {
 	switch {
 	case sze <= fixedStr:
 		e.encodeBit(cFixStr + byte(sze))
-	case sze <= math.MaxInt8:
+	case sze <= math.MaxUint8:
 		e.encodeBit(cStr8)
-		binary.Write(e.w, binary.BigEndian, int8(sze))
-	case sze <= math.MaxInt16:
+		e.encodeLen8(uint8(sze))
+	case sze <= math.MaxUint16:
 		e.encodeBit(cStr16)
-		binary.Write(e.w, binary.BigEndian, int16(sze))
-	case sze <= math.MaxInt32:
+		e.encodeLen16(uint16(sze))
+	case sze <= math.MaxUint32:
 		e.encodeBit(cStr32)
-		binary.Write(e.w, binary.BigEndian, int32(sze))
+		e.encodeLen32(uint32(sze))
 	case sze <= math.MaxInt64:
 		e.encodeBit(cStr64)
-		binary.Write(e.w, binary.BigEndian, int64(sze))
+		e.encodeLen64(uint64(sze))
 	}
-	e.w.WriteManys(val)
+	e.w.WriteText(val)
 	return
 }
 
 func (e *Encoder) encodeExt(val Corker) {
+	bit := val.ExtendCORK()
 	enc, err := val.MarshalCORK()
 	if err != nil {
 		panic(err)
 	}
 	sze := len(enc)
 	switch {
-	case sze <= math.MaxInt8:
+	case sze <= fixedExt:
+		e.encodeBit(cFixExt + byte(sze))
+	case sze <= math.MaxUint8:
 		e.encodeBit(cExt8)
-		binary.Write(e.w, binary.BigEndian, int8(sze))
-	case sze <= math.MaxInt16:
+		e.encodeLen8(uint8(sze))
+	case sze <= math.MaxUint16:
 		e.encodeBit(cExt16)
-		binary.Write(e.w, binary.BigEndian, int16(sze))
-	case sze <= math.MaxInt32:
+		e.encodeLen16(uint16(sze))
+	case sze <= math.MaxUint32:
 		e.encodeBit(cExt32)
-		binary.Write(e.w, binary.BigEndian, int32(sze))
+		e.encodeLen32(uint32(sze))
 	case sze <= math.MaxInt64:
 		e.encodeBit(cExt64)
-		binary.Write(e.w, binary.BigEndian, int64(sze))
+		e.encodeLen64(uint64(sze))
 	}
-	e.w.WriteOne(val.ExtendCORK())
+	e.w.WriteOne(bit)
 	e.w.WriteMany(enc)
 	return
 }
 
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+func (e *Encoder) encodeLen(val int) {
+	e.encodeUint(uint(val))
+	return
+}
+
+// --------------------------------------------------
+
+func (e *Encoder) encodeLen8(val uint8) {
+	e.encodeBit(byte(val))
+}
+
+func (e *Encoder) encodeLen16(val uint16) {
+	buf := make([]byte, 2)
+	binary.BigEndian.PutUint16(buf, val)
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeLen32(val uint32) {
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, val)
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeLen64(val uint64) {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, val)
+	e.w.Write(buf)
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
 func (e *Encoder) encodeInt(val int) {
 	switch {
 	case val >= 0 && val <= fixedInt:
-		e.encodeBit(byte(val))
+		e.encodeInt1Fixed(int8(val))
 	case val <= math.MaxInt8:
-		e.encodeBit(cInt8)
-		binary.Write(e.w, binary.BigEndian, int8(val))
+		e.encodeInt8Fixed(int8(val))
 	case val <= math.MaxInt16:
-		e.encodeBit(cInt16)
-		binary.Write(e.w, binary.BigEndian, int16(val))
+		e.encodeInt16Fixed(int16(val))
 	case val <= math.MaxInt32:
-		e.encodeBit(cInt32)
-		binary.Write(e.w, binary.BigEndian, int32(val))
+		e.encodeInt32Fixed(int32(val))
 	case val <= math.MaxInt64:
-		e.encodeBit(cInt64)
-		binary.Write(e.w, binary.BigEndian, int64(val))
+		e.encodeInt64Fixed(int64(val))
 	}
 	return
 }
+
+// --------------------------------------------------
+
+func (e *Encoder) encodeInt8(val int8) {
+	if e.h.Precision {
+		e.encodeInt8Fixed(val)
+	} else {
+		e.encodeInt(int(val))
+	}
+}
+
+func (e *Encoder) encodeInt16(val int16) {
+	if e.h.Precision {
+		e.encodeInt16Fixed(val)
+	} else {
+		e.encodeInt(int(val))
+	}
+}
+
+func (e *Encoder) encodeInt32(val int32) {
+	if e.h.Precision {
+		e.encodeInt32Fixed(val)
+	} else {
+		e.encodeInt(int(val))
+	}
+}
+
+func (e *Encoder) encodeInt64(val int64) {
+	if e.h.Precision {
+		e.encodeInt64Fixed(val)
+	} else {
+		e.encodeInt(int(val))
+	}
+}
+
+// --------------------------------------------------
+
+func (e *Encoder) encodeInt1Fixed(val int8) {
+	e.encodeBit(byte(val))
+}
+
+func (e *Encoder) encodeInt8Fixed(val int8) {
+	e.encodeBit(cInt8)
+	e.encodeBit(byte(val))
+}
+
+func (e *Encoder) encodeInt16Fixed(val int16) {
+	e.encodeBit(cInt16)
+	buf := make([]byte, 2)
+	binary.BigEndian.PutUint16(buf, uint16(val))
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeInt32Fixed(val int32) {
+	e.encodeBit(cInt32)
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(val))
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeInt64Fixed(val int64) {
+	e.encodeBit(cInt64)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(val))
+	e.w.Write(buf)
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
 
 func (e *Encoder) encodeUint(val uint) {
 	switch {
 	case val >= 0 && val <= fixedInt:
-		e.encodeBit(byte(val))
+		e.encodeUint1Fixed(uint8(val))
 	case val <= math.MaxUint8:
-		e.encodeBit(cUint8)
-		binary.Write(e.w, binary.BigEndian, uint8(val))
+		e.encodeUint8Fixed(uint8(val))
 	case val <= math.MaxUint16:
-		e.encodeBit(cUint16)
-		binary.Write(e.w, binary.BigEndian, uint16(val))
+		e.encodeUint16Fixed(uint16(val))
 	case val <= math.MaxUint32:
-		e.encodeBit(cUint32)
-		binary.Write(e.w, binary.BigEndian, uint32(val))
+		e.encodeUint32Fixed(uint32(val))
 	case val <= math.MaxUint64:
-		e.encodeBit(cUint64)
-		binary.Write(e.w, binary.BigEndian, uint64(val))
+		e.encodeUint64Fixed(uint64(val))
 	}
 	return
 }
 
-func (e *Encoder) encodeTime(val time.Time) {
-	binary.Write(e.w, binary.BigEndian, val.UTC().UnixNano())
-	return
+// --------------------------------------------------
+
+func (e *Encoder) encodeUint8(val uint8) {
+	if e.h.Precision {
+		e.encodeUint8Fixed(val)
+	} else {
+		e.encodeUint(uint(val))
+	}
 }
 
+func (e *Encoder) encodeUint16(val uint16) {
+	if e.h.Precision {
+		e.encodeUint16Fixed(val)
+	} else {
+		e.encodeUint(uint(val))
+	}
+}
+
+func (e *Encoder) encodeUint32(val uint32) {
+	if e.h.Precision {
+		e.encodeUint32Fixed(val)
+	} else {
+		e.encodeUint(uint(val))
+	}
+}
+
+func (e *Encoder) encodeUint64(val uint64) {
+	if e.h.Precision {
+		e.encodeUint64Fixed(val)
+	} else {
+		e.encodeUint(uint(val))
+	}
+}
+
+// --------------------------------------------------
+
+func (e *Encoder) encodeUint1Fixed(val uint8) {
+	e.encodeBit(byte(val))
+}
+
+func (e *Encoder) encodeUint8Fixed(val uint8) {
+	e.encodeBit(cUint8)
+	e.encodeBit(byte(val))
+}
+
+func (e *Encoder) encodeUint16Fixed(val uint16) {
+	e.encodeBit(cUint16)
+	buf := make([]byte, 2)
+	binary.BigEndian.PutUint16(buf, val)
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeUint32Fixed(val uint32) {
+	e.encodeBit(cUint32)
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, val)
+	e.w.Write(buf)
+}
+
+func (e *Encoder) encodeUint64Fixed(val uint64) {
+	e.encodeBit(cUint64)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, val)
+	e.w.Write(buf)
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
 func (e *Encoder) encodeFloat32(val float32) {
-	binary.Write(e.w, binary.BigEndian, val)
+	e.encodeBit(cFloat32)
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, math.Float32bits(val))
+	e.w.Write(buf)
 	return
 }
 
 func (e *Encoder) encodeFloat64(val float64) {
-	binary.Write(e.w, binary.BigEndian, val)
+	e.encodeBit(cFloat64)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, math.Float64bits(val))
+	e.w.Write(buf)
 	return
+}
+
+func (e *Encoder) encodeComplex64(val complex64) {
+	e.encodeBit(cComplex64)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint32(buf[:4], math.Float32bits(float32(real(val))))
+	binary.BigEndian.PutUint32(buf[4:], math.Float32bits(float32(imag(val))))
+	e.w.Write(buf)
+	return
+}
+
+func (e *Encoder) encodeComplex128(val complex128) {
+	e.encodeBit(cComplex128)
+	buf := make([]byte, 16)
+	binary.BigEndian.PutUint64(buf[:8], math.Float64bits(float64(real(val))))
+	binary.BigEndian.PutUint64(buf[8:], math.Float64bits(float64(imag(val))))
+	e.w.Write(buf)
+	return
+}
+
+func (e *Encoder) encodeTime(val time.Time) {
+	e.encodeBit(cTime)
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(val.UTC().UnixNano()))
+	e.w.Write(buf)
+	return
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+
+func (e *Encoder) encodeArr(src interface{}, kind reflect.Type, item reflect.Value) {
+	e.encodeBit(cArr)
+	e.encodeLen(item.Len())
+	for i := 0; i < reflect.ValueOf(src).Len(); i++ {
+		e.encode(item.Index(i).Interface())
+	}
+}
+
+func (e *Encoder) encodeMap(src interface{}, kind reflect.Type, item reflect.Value) {
+	e.encodeBit(cMap)
+	e.encodeLen(item.Len())
+	for _, k := range item.MapKeys() {
+		e.encode(k.Interface())
+		e.encode(item.MapIndex(k).Interface())
+	}
 }

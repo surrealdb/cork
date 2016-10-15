@@ -15,36 +15,15 @@
 package cork
 
 import (
-	"io"
 	"reflect"
-	"unsafe"
 )
 
-type writer struct {
-	io.Writer
-}
+var registry = make(map[byte]reflect.Type)
 
-func newWriter(dst io.Writer) *writer {
-	return &writer{dst}
-}
+// Register adds a Corker type to the registry, enabling the
+// object type to be encoded and decoded using the Corker methods.
+func Register(value Corker) {
 
-func (w *writer) WriteOne(val byte) {
-	_, err := w.Write([]byte{val})
-	if err != nil {
-		panic(err)
-	}
-	return
-}
+	registry[value.ExtendCORK()] = reflect.TypeOf(value).Elem()
 
-func (w *writer) WriteMany(val []byte) {
-	_, err := w.Write(val)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
-func (w *writer) WriteText(val string) {
-	b := *(*[]byte)(unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&val))))
-	w.WriteMany(b)
 }
