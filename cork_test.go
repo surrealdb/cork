@@ -25,6 +25,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type TestInt int
+
+type TestStr string
+
 type Tested struct {
 	Name  string
 	Data  []byte `cork:"data"`
@@ -290,6 +294,8 @@ func TestComplete(t *testing.T) {
 		false,
 		"one",
 		clock,
+		TestInt(1),
+		TestStr("Hi"),
 		float32(math.Pi),
 		float64(math.Pi),
 		complex64(math.Pi),
@@ -330,6 +336,8 @@ func TestComplete(t *testing.T) {
 		false,
 		"one",
 		clock,
+		int64(1),
+		string("Hi"),
 		float32(math.Pi),
 		float64(math.Pi),
 		complex64(math.Pi),

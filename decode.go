@@ -92,8 +92,10 @@ func (d *Decoder) Decode(dst interface{}) (err error) {
 }
 
 func (d *Decoder) decode(dst interface{}) {
+	d.proceed(dst, d.decodeBit())
+}
 
-	b := d.decodeBit()
+func (d *Decoder) proceed(dst interface{}, b byte) {
 
 	switch val := dst.(type) {
 
@@ -1039,6 +1041,52 @@ func (d *Decoder) decodeRef(b byte, val reflect.Value) {
 			d.decodeStructMap(b, val)
 		}
 		return
+
+	case reflect.Interface:
+		var i interface{}
+		d.proceed(&i, b)
+		val.Set(reflect.ValueOf(i))
+		return
+
+	case reflect.Bool:
+		var i bool
+		d.proceed(&i, b)
+		val.SetBool(i)
+
+	case reflect.String:
+		var i string
+		d.proceed(&i, b)
+		val.SetString(i)
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		var i int
+		d.proceed(&i, b)
+		val.SetInt(int64(i))
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		var i uint
+		d.proceed(&i, b)
+		val.SetUint(uint64(i))
+
+	case reflect.Float32:
+		var i float32
+		d.proceed(&i, b)
+		val.SetFloat(float64(i))
+
+	case reflect.Float64:
+		var i float64
+		d.proceed(&i, b)
+		val.SetFloat(float64(i))
+
+	case reflect.Complex64:
+		var i complex64
+		d.proceed(&i, b)
+		val.SetComplex(complex128(i))
+
+	case reflect.Complex128:
+		var i complex128
+		d.proceed(&i, b)
+		val.SetComplex(complex128(i))
 
 	}
 

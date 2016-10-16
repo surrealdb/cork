@@ -411,6 +411,33 @@ func (e *Encoder) encode(src interface{}) {
 		case reflect.Map:
 			e.encodeMap(src, kind, item)
 
+		case reflect.Bool:
+			e.encode(bool(item.Bool()))
+
+		case reflect.String:
+			e.encode(string(item.String()))
+
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			e.encode(item.Int())
+
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			e.encode(item.Uint())
+
+		case reflect.Float32:
+			e.encode(float32(item.Float()))
+
+		case reflect.Float64:
+			e.encode(float64(item.Float()))
+
+		case reflect.Complex64:
+			e.encode(complex64(item.Complex()))
+
+		case reflect.Complex128:
+			e.encode(complex128(item.Complex()))
+
+		default:
+			e.encodeBit(cNil)
+
 		}
 
 	}
