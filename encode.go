@@ -16,6 +16,7 @@ package cork
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -366,11 +367,25 @@ func (e *Encoder) encode(src interface{}) {
 		}
 
 	// ---------------------------------------------
-	// Include map[interface{}]interface{} type
+	// Include self encoders
 	// ---------------------------------------------
 
 	case Corker:
 		e.encodeExt(val)
+
+	case encoding.TextMarshaler:
+		enc, err := val.MarshalText()
+		if err != nil {
+			panic(err)
+		}
+		e.encodeTxt(enc)
+
+	case encoding.BinaryMarshaler:
+		enc, err := val.MarshalBinary()
+		if err != nil {
+			panic(err)
+		}
+		e.encodeBin(enc)
 
 	// ---------------------------------------------
 	// Use reflect for any remaining types
@@ -527,6 +542,28 @@ func (e *Encoder) encodeExt(val Corker) {
 	}
 	e.w.WriteOne(bit)
 	e.w.WriteMany(enc)
+	return
+}
+
+func (e *Encoder) encodeTxt(val []byte) {
+	sze := len(val)
+	switch {
+	case sze <= fixedStr:
+		e.encodeBit(cFixStr + byte(sze))
+	case sze <= math.MaxUint8:
+		e.encodeBit(cStr8)
+		e.encodeLen8(uint8(sze))
+	case sze <= math.MaxUint16:
+		e.encodeBit(cStr16)
+		e.encodeLen16(uint16(sze))
+	case sze <= math.MaxUint32:
+		e.encodeBit(cStr32)
+		e.encodeLen32(uint32(sze))
+	case sze <= math.MaxInt64:
+		e.encodeBit(cStr64)
+		e.encodeLen64(uint64(sze))
+	}
+	e.w.WriteMany(val)
 	return
 }
 

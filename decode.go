@@ -16,6 +16,7 @@ package cork
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -495,6 +496,34 @@ func (d *Decoder) proceed(dst interface{}, b byte) {
 		}
 
 	// ---------------------------------------------
+	// Include self decoders
+	// ---------------------------------------------
+
+	case Corker:
+		d.decodeCrk(b, val)
+		return
+
+	case encoding.TextUnmarshaler:
+		if isStr(b) {
+			bin := d.decodeTxt(b)
+			err := val.UnmarshalText(bin)
+			if err != nil {
+				panic(err)
+			}
+			return
+		}
+
+	case encoding.BinaryUnmarshaler:
+		if isBin(b) {
+			bin := d.decodeBin(b)
+			err := val.UnmarshalBinary(bin)
+			if err != nil {
+				panic(err)
+			}
+			return
+		}
+
+	// ---------------------------------------------
 	// Use reflect for any remaining types
 	// ---------------------------------------------
 
@@ -538,8 +567,7 @@ func (d *Decoder) decodeBin(b byte) (val []byte) {
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
-	bin := d.r.ReadMany(sze)
-	return bin
+	return d.r.ReadMany(sze)
 }
 
 func (d *Decoder) decodeStr(b byte) (val string) {
@@ -564,8 +592,7 @@ func (d *Decoder) decodeStr(b byte) (val string) {
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
-	bin := d.r.ReadMany(sze)
-	return string(bin)
+	return string(d.r.ReadMany(sze))
 }
 
 func (d *Decoder) decodeExt(b byte) (val Corker) {
@@ -599,6 +626,68 @@ func (d *Decoder) decodeExt(b byte) (val Corker) {
 	}
 	return obj
 }
+
+func (d *Decoder) decodeCrk(b byte, val Corker) {
+	var sze int
+	switch {
+	case b >= cFixExt && b <= cFixExt+fixedExt:
+		sze = int(b - cFixExt)
+	case b == cExt8:
+		var tmp uint8
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cExt16:
+		var tmp uint16
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cExt32:
+		var tmp uint32
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cExt64:
+		var tmp uint64
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	}
+	d.r.ReadOne()
+	bin := d.r.ReadMany(sze)
+	err := val.UnmarshalCORK(bin)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func (d *Decoder) decodeTxt(b byte) (val []byte) {
+	var sze int
+	switch {
+	case b >= cFixStr && b <= cFixStr+fixedStr:
+		sze = int(b - cFixStr)
+	case b == cStr8:
+		var tmp uint8
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cStr16:
+		var tmp uint16
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cStr32:
+		var tmp uint32
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	case b == cStr64:
+		var tmp uint64
+		binary.Read(d.r, binary.BigEndian, &tmp)
+		sze = int(tmp)
+	}
+	return d.r.ReadMany(sze)
+}
+
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
 
 func (d *Decoder) decodeInt(b byte) (val int) {
 	switch {
@@ -706,11 +795,11 @@ func (d *Decoder) decodeComplex128(b byte) (val complex128) {
 	return
 }
 
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
 
 func (d *Decoder) decodeArr(b byte) (val interface{}) {
 	if d.h.ArrType != nil {
@@ -904,11 +993,11 @@ func (d *Decoder) decodeArrTime(b byte) (val []time.Time) {
 	return arr
 }
 
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
 
 func (d *Decoder) decodeMap(b byte) (val interface{}) {
 	if d.h.MapType != nil {
@@ -1008,11 +1097,11 @@ func (d *Decoder) decodeMapStrUint(b byte) (val map[string]uint) {
 	return obj
 }
 
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
+// --------------------------------------------------
 
 func (d *Decoder) decodeRef(b byte, val reflect.Value) {
 

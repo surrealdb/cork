@@ -29,6 +29,34 @@ type TestInt int
 
 type TestStr string
 
+type TestSelferText struct {
+	Test string
+}
+
+func (this *TestSelferText) MarshalText() (text []byte, err error) {
+	text = []byte("TEXT")
+	return
+}
+
+func (this *TestSelferText) UnmarshalText(text []byte) (err error) {
+	this.Test = string(text)
+	return
+}
+
+type TestSelferBinary struct {
+	Test string
+}
+
+func (this *TestSelferBinary) MarshalBinary() (data []byte, err error) {
+	data = []byte("DATA")
+	return
+}
+
+func (this *TestSelferBinary) UnmarshalBinary(data []byte) (err error) {
+	this.Test = string(data)
+	return
+}
+
 type Tested struct {
 	Name  string
 	Data  []byte `cork:"data"`
@@ -182,6 +210,32 @@ func TestCorkers(t *testing.T) {
 		err := NewDecoder(buf).Decode(&out)
 		So(err, ShouldBeNil)
 		So(out, ShouldResemble, chk)
+	})
+
+}
+
+func TestSelfers(t *testing.T) {
+
+	Convey("Test TestSelferText", t, func() {
+		var out TestSelferText
+		obj := new(TestSelferText)
+		enc := Encode(obj)
+		buf := bytes.NewBuffer(enc)
+		err := NewDecoder(buf).Decode(&out)
+		So(enc, ShouldResemble, []byte{cFixStr + 0x04, 84, 69, 88, 84})
+		So(err, ShouldBeNil)
+		So(out.Test, ShouldResemble, "TEXT")
+	})
+
+	Convey("Test TestSelferBinary", t, func() {
+		var out TestSelferBinary
+		obj := new(TestSelferBinary)
+		enc := Encode(obj)
+		buf := bytes.NewBuffer(enc)
+		err := NewDecoder(buf).Decode(&out)
+		So(enc, ShouldResemble, []byte{cFixBin + 0x04, 68, 65, 84, 65})
+		So(err, ShouldBeNil)
+		So(out.Test, ShouldResemble, "DATA")
 	})
 
 }
