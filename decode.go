@@ -447,31 +447,67 @@ func (d *Decoder) proceed(dst interface{}, b byte) {
 			return
 
 		case isNum(b):
-			*val = d.decodeInt1(b)
+			if d.h.Precision {
+				*val = d.decodeInt1(b)
+			} else {
+				*val = d.decodeIntAny(b)
+			}
 			return
 		case b == cInt8:
-			*val = d.decodeInt8(b)
+			if d.h.Precision {
+				*val = d.decodeInt8(b)
+			} else {
+				*val = d.decodeIntAny(b)
+			}
 			return
 		case b == cInt16:
-			*val = d.decodeInt16(b)
+			if d.h.Precision {
+				*val = d.decodeInt16(b)
+			} else {
+				*val = d.decodeIntAny(b)
+			}
 			return
 		case b == cInt32:
-			*val = d.decodeInt32(b)
+			if d.h.Precision {
+				*val = d.decodeInt32(b)
+			} else {
+				*val = d.decodeIntAny(b)
+			}
 			return
 		case b == cInt64:
-			*val = d.decodeInt64(b)
+			if d.h.Precision {
+				*val = d.decodeInt64(b)
+			} else {
+				*val = d.decodeIntAny(b)
+			}
 			return
 		case b == cUint8:
-			*val = d.decodeUint8(b)
+			if d.h.Precision {
+				*val = d.decodeUint8(b)
+			} else {
+				*val = d.decodeUintAny(b)
+			}
 			return
 		case b == cUint16:
-			*val = d.decodeUint16(b)
+			if d.h.Precision {
+				*val = d.decodeUint16(b)
+			} else {
+				*val = d.decodeUintAny(b)
+			}
 			return
 		case b == cUint32:
-			*val = d.decodeUint32(b)
+			if d.h.Precision {
+				*val = d.decodeUint32(b)
+			} else {
+				*val = d.decodeUintAny(b)
+			}
 			return
 		case b == cUint64:
-			*val = d.decodeUint64(b)
+			if d.h.Precision {
+				*val = d.decodeUint64(b)
+			} else {
+				*val = d.decodeUintAny(b)
+			}
 			return
 		case b == cFloat32:
 			*val = d.decodeFloat32(b)
@@ -705,6 +741,10 @@ func (d *Decoder) decodeInt(b byte) (val int) {
 	return
 }
 
+func (d *Decoder) decodeIntAny(b byte) (val int64) {
+	return int64(d.decodeInt(b))
+}
+
 func (d *Decoder) decodeInt1(b byte) (val int8) {
 	return int8(b)
 }
@@ -743,6 +783,10 @@ func (d *Decoder) decodeUint(b byte) (val uint) {
 		val = uint(d.decodeUint64(b))
 	}
 	return
+}
+
+func (d *Decoder) decodeUintAny(b byte) (val uint64) {
+	return uint64(d.decodeUint(b))
 }
 
 func (d *Decoder) decodeUint1(b byte) (val uint8) {

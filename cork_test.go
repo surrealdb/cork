@@ -245,8 +245,8 @@ func TestComplex(t *testing.T) {
 	bef := Tested{"test", []byte("test"), []string{"1", "2"}, true, 25, "test", ""}
 	err := Tested{"", []byte(nil), nil, false, 0, "", ""}
 	aft := Tested{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-	oth := map[string]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int8(25)}
-	gen := map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int8(25)}
+	oth := map[string]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int64(25)}
+	gen := map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int64(25)}
 
 	Convey("Nil will decode into interface{}", t, func() {
 		var out interface{}
