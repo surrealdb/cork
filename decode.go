@@ -539,20 +539,20 @@ func (d *Decoder) proceed(dst interface{}, b byte) {
 		d.decodeCrk(b, val)
 		return
 
-	case encoding.TextUnmarshaler:
-		if isStr(b) {
-			bin := d.decodeTxt(b)
-			err := val.UnmarshalText(bin)
+	case encoding.BinaryUnmarshaler:
+		if isBin(b) {
+			bin := d.decodeBin(b)
+			err := val.UnmarshalBinary(bin)
 			if err != nil {
 				panic(err)
 			}
 			return
 		}
 
-	case encoding.BinaryUnmarshaler:
-		if isBin(b) {
-			bin := d.decodeBin(b)
-			err := val.UnmarshalBinary(bin)
+	case encoding.TextUnmarshaler:
+		if isStr(b) {
+			bin := d.decodeTxt(b)
+			err := val.UnmarshalText(bin)
 			if err != nil {
 				panic(err)
 			}

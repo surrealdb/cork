@@ -373,19 +373,19 @@ func (e *Encoder) encode(src interface{}) {
 	case Corker:
 		e.encodeExt(val)
 
-	case encoding.TextMarshaler:
-		enc, err := val.MarshalText()
-		if err != nil {
-			panic(err)
-		}
-		e.encodeTxt(enc)
-
 	case encoding.BinaryMarshaler:
 		enc, err := val.MarshalBinary()
 		if err != nil {
 			panic(err)
 		}
 		e.encodeBin(enc)
+
+	case encoding.TextMarshaler:
+		enc, err := val.MarshalText()
+		if err != nil {
+			panic(err)
+		}
+		e.encodeTxt(enc)
 
 	// ---------------------------------------------
 	// Use reflect for any remaining types
