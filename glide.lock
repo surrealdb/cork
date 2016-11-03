@@ -1,9 +1,9 @@
 hash: 0c05c7875e82cfcce892913544c4e71c898fc71131a0330b4fdc8d261ff9c06e
-updated: 2016-10-06T14:03:00.217362639+01:00
+updated: 2016-11-03T08:25:39.224790847Z
 imports: []
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: 45518c130e5bd1525f20110830a4986365a153de
+  version: e34a5cd6a1bc7c4fde759f2d3039852fc68b5fcc
   subpackages:
   - js
 - name: github.com/jtolds/gls
