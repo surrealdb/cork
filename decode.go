@@ -850,6 +850,40 @@ func (d *Decoder) decodeArr(b byte) (val interface{}) {
 		switch d.h.ArrType.(type) {
 		default:
 			return d.decodeArrNil(b)
+		case []bool:
+			return d.decodeArrVal(b)
+		case []string:
+			return d.decodeArrStr(b)
+		case []int:
+			return d.decodeArrInt(b)
+		case []int8:
+			return d.decodeArrInt8(b)
+		case []int16:
+			return d.decodeArrInt16(b)
+		case []int32:
+			return d.decodeArrInt32(b)
+		case []int64:
+			return d.decodeArrInt64(b)
+		case []uint:
+			return d.decodeArrUint(b)
+		case []uint8:
+			return d.decodeArrUint8(b)
+		case []uint16:
+			return d.decodeArrUint16(b)
+		case []uint32:
+			return d.decodeArrUint32(b)
+		case []uint64:
+			return d.decodeArrUint64(b)
+		case []float32:
+			return d.decodeArrFloat32(b)
+		case []float64:
+			return d.decodeArrFloat64(b)
+		case []complex64:
+			return d.decodeArrComplex64(b)
+		case []complex128:
+			return d.decodeArrComplex128(b)
+		case []time.Time:
+			return d.decodeArrTime(b)
 		case reflect.Type:
 			return d.decodeArrUnk(b)
 		}
@@ -1048,6 +1082,14 @@ func (d *Decoder) decodeMap(b byte) (val interface{}) {
 		switch d.h.MapType.(type) {
 		default:
 			return d.decodeMapNilNil(b)
+		case map[string]bool:
+			return d.decodeMapStrVal(b)
+		case map[string]string:
+			return d.decodeMapStrStr(b)
+		case map[string]int:
+			return d.decodeMapStrInt(b)
+		case map[string]uint:
+			return d.decodeMapStrUint(b)
 		case map[string]interface{}:
 			return d.decodeMapStrNil(b)
 		case reflect.Type:
