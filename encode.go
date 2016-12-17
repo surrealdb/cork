@@ -83,12 +83,12 @@ Example:
 	// Encoding a typed value
 	var s string = "Hello"
 	buf := bytes.NewBuffer(nil)
-	err = codec.NewEncoder(buf).Encode(s)
+	err = cork.NewEncoder(buf).Encode(s)
 
 	// Encoding a struct
 	var t &Tester{Name: "Temp", Size: 0}
 	buf := bytes.NewBuffer(nil)
-	err = codec.NewEncoder(buf).Encode(t)
+	err = cork.NewEncoder(buf).Encode(t)
 
 */
 func (e *Encoder) Encode(src interface{}) (err error) {

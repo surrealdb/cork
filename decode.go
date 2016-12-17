@@ -69,12 +69,12 @@ Example:
 	// Decoding into a non-nil typed value
 	var s string
 	buf := bytes.NewBuffer(src)
-	err = codec.NewDecoder(buf).Decode(&s)
+	err = cork.NewDecoder(buf).Decode(&s)
 
 	// Decoding into nil interface
 	var v interface{}
 	buf := bytes.NewBuffer(src)
-	err := codec.NewDecoder(buf).Decode(&v)
+	err := cork.NewDecoder(buf).Decode(&v)
 
 */
 func (d *Decoder) Decode(dst interface{}) (err error) {
