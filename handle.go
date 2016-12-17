@@ -14,8 +14,6 @@
 
 package cork
 
-// import "reflect"
-
 type Handle struct {
 
 	// ArrType specifies the type of slice to use when decoding
