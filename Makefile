@@ -41,6 +41,15 @@ deps:
 tests:
 	$(GO) test `glide novendor`
 
+# The `make cover` command runs all
+# tests, and produces and uploads a
+# coverage profile to coveralls.
+
+.PHONY: cover
+cover:
+	$(GO) test -v -cover -race -coverprofile=/home/ubuntu/coverage.out `glide novendor`
+	goveralls -coverprofile=/home/ubuntu/coverage.out -service=circle-ci -repotoken=${COVERALLS}
+
 # The `make glide` command ensures that
 # all imported dependencies are synced
 # and located within the vendor folder.
