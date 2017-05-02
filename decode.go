@@ -22,6 +22,7 @@ import (
 	"io"
 	"reflect"
 	"time"
+	"unsafe"
 )
 
 // Decoder represents a CORK decoder.
@@ -628,7 +629,8 @@ func (d *Decoder) decodeStr(b byte) (val string) {
 		binary.Read(d.r, binary.BigEndian, &tmp)
 		sze = int(tmp)
 	}
-	return string(d.r.ReadMany(sze))
+	bin := d.r.ReadMany(sze)
+	return *(*string)(unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&bin))))
 }
 
 func (d *Decoder) decodeExt(b byte) (val Corker) {
