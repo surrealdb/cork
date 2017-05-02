@@ -1102,7 +1102,7 @@ func (d *Decoder) decodeMap(b byte) (val interface{}) {
 func (d *Decoder) decodeMapNilNil(b byte) (val map[interface{}]interface{}) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[interface{}]interface{})
+	obj := make(map[interface{}]interface{}, tot)
 	for i := 0; i < tot; i++ {
 		var k interface{}
 		var v interface{}
@@ -1116,7 +1116,7 @@ func (d *Decoder) decodeMapNilNil(b byte) (val map[interface{}]interface{}) {
 func (d *Decoder) decodeMapStrNil(b byte) (val map[string]interface{}) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]interface{})
+	obj := make(map[string]interface{}, tot)
 	for i := 0; i < tot; i++ {
 		var k string
 		var v interface{}
@@ -1130,7 +1130,7 @@ func (d *Decoder) decodeMapStrNil(b byte) (val map[string]interface{}) {
 func (d *Decoder) decodeMapStrVal(b byte) (val map[string]bool) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]bool)
+	obj := make(map[string]bool, tot)
 	for i := 0; i < tot; i++ {
 		var k string
 		var v bool
@@ -1144,7 +1144,7 @@ func (d *Decoder) decodeMapStrVal(b byte) (val map[string]bool) {
 func (d *Decoder) decodeMapStrStr(b byte) (val map[string]string) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]string)
+	obj := make(map[string]string, tot)
 	for i := 0; i < tot; i++ {
 		var k string
 		var v string
@@ -1158,7 +1158,7 @@ func (d *Decoder) decodeMapStrStr(b byte) (val map[string]string) {
 func (d *Decoder) decodeMapStrInt(b byte) (val map[string]int) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]int)
+	obj := make(map[string]int, tot)
 	for i := 0; i < tot; i++ {
 		var k string
 		var v int
@@ -1172,7 +1172,7 @@ func (d *Decoder) decodeMapStrInt(b byte) (val map[string]int) {
 func (d *Decoder) decodeMapStrUint(b byte) (val map[string]uint) {
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]uint)
+	obj := make(map[string]uint, tot)
 	for i := 0; i < tot; i++ {
 		var k string
 		var v uint
@@ -1342,7 +1342,7 @@ func (d *Decoder) decodeStructMap(b byte, item reflect.Value) {
 	typ := item.Type()
 	nxt := d.decodeBit()
 	tot := d.decodeInt(nxt)
-	obj := make(map[string]*field)
+	obj := make(map[string]*field, tot)
 
 	for i := 0; i < item.NumField(); i++ {
 		if fld := newField(typ.Field(i), item.Field(i)); fld != nil {
