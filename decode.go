@@ -33,7 +33,7 @@ type Decoder struct {
 
 // Decode decodes a CORK into a data object.
 func Decode(src []byte) (dst interface{}) {
-	buf := bytes.NewBuffer(src)
+	buf := bytes.NewReader(src)
 	NewDecoder(buf).Decode(&dst)
 	return dst
 }
