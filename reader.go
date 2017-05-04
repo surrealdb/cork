@@ -16,6 +16,8 @@ package cork
 
 import (
 	"io"
+	"reflect"
+	"unsafe"
 )
 
 type reader struct {
@@ -42,4 +44,9 @@ func (r *reader) ReadMany(l int) (val []byte) {
 		panic(err)
 	}
 	return data[:]
+}
+
+func (r *reader) ReadText(l int) (val string) {
+	b := r.ReadMany(l)
+	return *(*string)(unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&b))))
 }
