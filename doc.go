@@ -25,7 +25,7 @@ by a description of its type, expressed in terms of a small set of predefined
 types. Pointers to values are not transmitted, but the contents are flattened
 and transmitted.
 
-To use gobs, create an Encoder and present it with a series of data items as
+To use cork, create an Encoder and present it with a series of data items as
 values or addresses that can be dereferenced to values. The Encoder makes sure
 all type information is sent before it is needed. At the receive side, a
 Decoder retrieves values from the encoded stream and unpacks them into local
@@ -89,8 +89,8 @@ variable will be ignored.  Fields that are in the receiving variable but missing
 from the transmitted type or value will be ignored in the destination.  If a field
 with the same name is present in both, their types must be compatible. Both the
 receiver and transmitter will do all necessary indirection and dereferencing to
-convert between gobs and actual Go values.  For instance, a gob type that is
-schematically,
+convert between cork encoded data and actual Go values. For instance, a cork type
+that is schematically,
 
 	struct { A, B int }
 
