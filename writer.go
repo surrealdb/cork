@@ -15,21 +15,22 @@
 package cork
 
 import (
+	"bufio"
 	"io"
 	"reflect"
 	"unsafe"
 )
 
 type writer struct {
-	io.Writer
+	*bufio.Writer
 }
 
-func newWriter(dst io.Writer) *writer {
-	return &writer{dst}
+func newWriter(w io.Writer) *writer {
+	return &writer{Writer: bufio.NewWriter(w)}
 }
 
 func (w *writer) WriteOne(val byte) {
-	_, err := w.Write([]byte{val})
+	err := w.WriteByte(val)
 	if err != nil {
 		panic(err)
 	}

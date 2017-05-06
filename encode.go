@@ -22,6 +22,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -29,6 +30,17 @@ import (
 type Encoder struct {
 	h *Handle
 	w *writer
+	p bool
+}
+
+var encoders = sync.Pool{
+	New: func() interface{} {
+		return &Encoder{
+			w: newWriter(nil),
+			h: new(Handle),
+			p: true,
+		}
+	},
 }
 
 // Encode encodes a data object into a CORK.
@@ -42,9 +54,25 @@ func Encode(src interface{}) (dst []byte) {
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
 		w: newWriter(w),
-		h: &Handle{
-			Precision: false,
-		},
+		h: new(Handle),
+	}
+}
+
+// NewEncoderFromPool returns an Encoder for encoding into an
+// io.Writer. The Encoder is taken from a pool of encoders, and
+// must be put back into the pool when finished, using e.Done().
+func NewEncoderFromPool(w io.Writer) *Encoder {
+	e := encoders.Get().(*Encoder)
+	e.w.Reset(w)
+	return e
+}
+
+// Done flushes any remaing data and adds the Encoder back into
+// the sync pool. If the Encoder was not originally from the
+// sync pool, then the Encoder is discarded.
+func (e *Encoder) Done() {
+	if e.p {
+		encoders.Put(e)
 	}
 }
 
@@ -103,6 +131,7 @@ func (e *Encoder) Encode(src interface{}) (err error) {
 		}
 	}()
 	e.encode(src)
+	e.w.Flush()
 	return
 }
 

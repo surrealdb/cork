@@ -15,26 +15,26 @@
 package cork
 
 import (
+	"bufio"
 	"io"
 	"reflect"
 	"unsafe"
 )
 
 type reader struct {
-	io.Reader
+	*bufio.Reader
 }
 
-func newReader(src io.Reader) *reader {
-	return &reader{src}
+func newReader(r io.Reader) *reader {
+	return &reader{Reader: bufio.NewReader(r)}
 }
 
 func (r *reader) ReadOne() (val byte) {
-	data := make([]byte, 1)
-	_, err := r.Read(data)
+	data, err := r.ReadByte()
 	if err != nil {
 		panic(err)
 	}
-	return data[0]
+	return data
 }
 
 func (r *reader) ReadMany(l int) (val []byte) {
@@ -43,7 +43,7 @@ func (r *reader) ReadMany(l int) (val []byte) {
 	if err != nil {
 		panic(err)
 	}
-	return data[:]
+	return data
 }
 
 func (r *reader) ReadText(l int) (val string) {

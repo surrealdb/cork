@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -28,6 +29,17 @@ import (
 type Decoder struct {
 	h *Handle
 	r *reader
+	p bool
+}
+
+var decoders = sync.Pool{
+	New: func() interface{} {
+		return &Decoder{
+			r: newReader(nil),
+			h: new(Handle),
+			p: true,
+		}
+	},
 }
 
 // Decode decodes a CORK into a data object.
@@ -41,9 +53,25 @@ func Decode(src []byte) (dst interface{}) {
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		r: newReader(r),
-		h: &Handle{
-			Precision: false,
-		},
+		h: new(Handle),
+	}
+}
+
+// NewDecoderFromPool returns a Decoder for decoding into an
+// io.Reader. The Decoder is taken from a pool of decoders, and
+// must be put back into the pool when finished, using d.Done().
+func NewDecoderFromPool(r io.Reader) *Decoder {
+	d := decoders.Get().(*Decoder)
+	d.r.Reset(r)
+	return d
+}
+
+// Done flushes adds the Decoder back into the sync pool. If the
+// Decoder was not originally from the sync pool, then the
+// Decoder is discarded.
+func (d *Decoder) Done() {
+	if d.p {
+		decoders.Put(d)
 	}
 }
 
