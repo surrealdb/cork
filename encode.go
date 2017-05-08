@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -122,9 +121,6 @@ Example:
 func (e *Encoder) Encode(src interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if catch, ok := r.(string); ok {
-				err = fmt.Errorf(catch)
-			}
 			if catch, ok := r.(error); ok {
 				err = catch
 			}

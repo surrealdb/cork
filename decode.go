@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"reflect"
 	"sync"
@@ -108,9 +107,6 @@ Example:
 func (d *Decoder) Decode(dst interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if catch, ok := r.(string); ok {
-				err = fmt.Errorf(catch)
-			}
 			if catch, ok := r.(error); ok {
 				err = catch
 			}
@@ -597,7 +593,7 @@ func (d *Decoder) proceed(dst interface{}, b byte) {
 
 	}
 
-	panic(fmt.Errorf("Can't decode into %T", dst))
+	panic(fail)
 
 }
 
