@@ -14,6 +14,8 @@
 
 package cork
 
+const tag = "cork"
+
 const (
 	fixedInt = 1<<7 - 1 // 127
 	fixedStr = 1<<5 - 1 // 31

@@ -419,31 +419,15 @@ func (e *Encoder) encode(src interface{}) {
 	default:
 
 		item := reflect.ValueOf(src)
-		kind := reflect.TypeOf(src)
 
-		switch kind.Kind() {
+		for item.Kind() == reflect.Ptr {
+			item = item.Elem()
+		}
 
-		case reflect.Ptr:
-			item := item.Elem()
-			if !item.IsValid() {
-				e.encodeBit(cNil)
-				return
-			}
-			e.encode(item.Interface())
+		switch item.Kind() {
 
-		case reflect.Struct:
-			flds := make([]*field, 0)
-			for i := 0; i < item.NumField(); i++ {
-				if fld := newField(kind.Field(i), item.Field(i)); fld != nil {
-					flds = append(flds, fld)
-				}
-			}
-			e.encodeBit(cMap)
-			e.encodeLen(len(flds))
-			for _, fld := range flds {
-				e.encode(fld.Show())
-				e.encode(item.FieldByName(fld.Name()).Interface())
-			}
+		default:
+			e.encodeBit(cNil)
 
 		case reflect.Slice:
 			e.encodeArr(src, kind, item)
@@ -475,8 +459,23 @@ func (e *Encoder) encode(src interface{}) {
 		case reflect.Complex128:
 			e.encode(complex128(item.Complex()))
 
-		default:
-			e.encodeBit(cNil)
+		case reflect.Struct:
+			tot := 0
+			cnt := item.NumField()
+			flds := make([]*field, cnt)
+			for i := 0; i < cnt; i++ {
+				if fld := newField(item.Type().Field(i), item.Field(i)); fld != nil {
+					flds[tot] = fld
+					tot++
+				}
+			}
+			e.encodeBit(cMap)
+			e.encodeLen(tot)
+			for i := 0; i < tot; i++ {
+				e.encodeStr(flds[i].show)
+				e.encode(flds[i].item.Interface())
+				flds[i].done()
+			}
 
 		}
 
@@ -857,15 +856,15 @@ func (e *Encoder) encodeTime(val time.Time) {
 // --------------------------------------------------
 // --------------------------------------------------
 
-func (e *Encoder) encodeArr(src interface{}, kind reflect.Type, item reflect.Value) {
+func (e *Encoder) encodeArr(item reflect.Value) {
 	e.encodeBit(cArr)
 	e.encodeLen(item.Len())
-	for i := 0; i < reflect.ValueOf(src).Len(); i++ {
+	for i := 0; i < item.Len(); i++ {
 		e.encode(item.Index(i).Interface())
 	}
 }
 
-func (e *Encoder) encodeMap(src interface{}, kind reflect.Type, item reflect.Value) {
+func (e *Encoder) encodeMap(item reflect.Value) {
 	e.encodeBit(cMap)
 	e.encodeLen(item.Len())
 	for _, k := range item.MapKeys() {

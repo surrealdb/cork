@@ -1364,42 +1364,35 @@ func (d *Decoder) decodeMapAny(b byte, obj reflect.Value) {
 func (d *Decoder) decodeStructMap(b byte, item reflect.Value) {
 
 	typ := item.Type()
-	nxt := d.decodeBit()
-	tot := d.decodeInt(nxt)
+	tot := d.decodeInt(d.decodeBit())
 	obj := make(map[string]*field, tot)
 
 	for i := 0; i < item.NumField(); i++ {
 		if fld := newField(typ.Field(i), item.Field(i)); fld != nil {
-			obj[fld.Show()] = fld
+			obj[fld.show] = fld
 		}
 	}
 
 	for i := 0; i < tot; i++ {
 
-		nxt = d.decodeBit()
-		k := d.decodeStr(nxt)
+		k := d.decodeStr(d.decodeBit())
 
-		if itm, ok := obj[k]; ok {
+		if fld, ok := obj[k]; ok {
 
-			fld := item.FieldByName(itm.Name())
-
-			// Println(i, itm, fld, fld.Interface())
-			// Printf("%T %v \n", itm, item)
-			// Printf("%T %v \n", fld, fld)
-			// Printf("%T %v \n", fld.Interface(), fld.Interface())
-			// Printf("%T %v \n", fld.Addr().Interface(), fld.Addr().Interface())
-			// Println("---")
-
-			if fld.CanSet() {
-				if fld.CanAddr() {
-					d.decode(fld.Addr().Interface())
+			if fld.item.CanSet() {
+				if fld.item.CanAddr() {
+					d.decode(fld.item.Addr().Interface())
 				} else {
-					d.decode(fld.Interface())
+					d.decode(fld.item.Interface())
 				}
 			}
 
 		}
 
+	}
+
+	for _, fld := range obj {
+		fld.done()
 	}
 
 }
