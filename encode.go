@@ -429,34 +429,34 @@ func (e *Encoder) encode(src interface{}) {
 			e.encodeBit(cNil)
 
 		case reflect.Slice:
-			e.encodeArr(src, kind, item)
+			e.encodeArr(item)
 
 		case reflect.Map:
-			e.encodeMap(src, kind, item)
+			e.encodeMap(item)
 
 		case reflect.Bool:
-			e.encode(bool(item.Bool()))
+			e.encodeVal(item.Bool())
 
 		case reflect.String:
-			e.encode(string(item.String()))
+			e.encodeStr(item.String())
 
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			e.encode(item.Int())
+			e.encodeInt64(item.Int())
 
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			e.encode(item.Uint())
+			e.encodeUint64(item.Uint())
 
 		case reflect.Float32:
-			e.encode(float32(item.Float()))
+			e.encodeFloat32(float32(item.Float()))
 
 		case reflect.Float64:
-			e.encode(float64(item.Float()))
+			e.encodeFloat64(item.Float())
 
 		case reflect.Complex64:
-			e.encode(complex64(item.Complex()))
+			e.encodeComplex64(complex64(item.Complex()))
 
 		case reflect.Complex128:
-			e.encode(complex128(item.Complex()))
+			e.encodeComplex128(item.Complex())
 
 		case reflect.Struct:
 			tot := 0

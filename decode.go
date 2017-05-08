@@ -881,7 +881,7 @@ func (d *Decoder) decodeArrVal(b byte) (val []bool) {
 	tot := d.decodeInt(nxt)
 	arr := make([]bool, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeVal(d.decodeBit())
 	}
 	return arr
 }
@@ -891,7 +891,7 @@ func (d *Decoder) decodeArrStr(b byte) (val []string) {
 	tot := d.decodeInt(nxt)
 	arr := make([]string, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeStr(d.decodeBit())
 	}
 	return arr
 }
@@ -901,7 +901,7 @@ func (d *Decoder) decodeArrInt(b byte) (val []int) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeInt(d.decodeBit())
 	}
 	return arr
 }
@@ -911,7 +911,7 @@ func (d *Decoder) decodeArrInt8(b byte) (val []int8) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int8, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = int8(d.decodeInt(d.decodeBit()))
 	}
 	return arr
 }
@@ -921,7 +921,7 @@ func (d *Decoder) decodeArrInt16(b byte) (val []int16) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int16, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = int16(d.decodeInt(d.decodeBit()))
 	}
 	return arr
 }
@@ -931,7 +931,7 @@ func (d *Decoder) decodeArrInt32(b byte) (val []int32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int32, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = int32(d.decodeInt(d.decodeBit()))
 	}
 	return arr
 }
@@ -941,7 +941,7 @@ func (d *Decoder) decodeArrInt64(b byte) (val []int64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]int64, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = int64(d.decodeInt(d.decodeBit()))
 	}
 	return arr
 }
@@ -951,7 +951,7 @@ func (d *Decoder) decodeArrUint(b byte) (val []uint) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeUint(d.decodeBit())
 	}
 	return arr
 }
@@ -961,7 +961,7 @@ func (d *Decoder) decodeArrUint8(b byte) (val []uint8) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint8, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = uint8(d.decodeUint(d.decodeBit()))
 	}
 	return arr
 }
@@ -971,7 +971,7 @@ func (d *Decoder) decodeArrUint16(b byte) (val []uint16) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint16, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = uint16(d.decodeUint(d.decodeBit()))
 	}
 	return arr
 }
@@ -981,7 +981,7 @@ func (d *Decoder) decodeArrUint32(b byte) (val []uint32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint32, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = uint32(d.decodeUint(d.decodeBit()))
 	}
 	return arr
 }
@@ -991,7 +991,7 @@ func (d *Decoder) decodeArrUint64(b byte) (val []uint64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]uint64, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = uint64(d.decodeUint(d.decodeBit()))
 	}
 	return arr
 }
@@ -1001,7 +1001,7 @@ func (d *Decoder) decodeArrFloat32(b byte) (val []float32) {
 	tot := d.decodeInt(nxt)
 	arr := make([]float32, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeFloat32(d.decodeBit())
 	}
 	return arr
 }
@@ -1011,7 +1011,7 @@ func (d *Decoder) decodeArrFloat64(b byte) (val []float64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]float64, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeFloat64(d.decodeBit())
 	}
 	return arr
 }
@@ -1021,7 +1021,7 @@ func (d *Decoder) decodeArrComplex64(b byte) (val []complex64) {
 	tot := d.decodeInt(nxt)
 	arr := make([]complex64, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeComplex64(d.decodeBit())
 	}
 	return arr
 }
@@ -1031,7 +1031,7 @@ func (d *Decoder) decodeArrComplex128(b byte) (val []complex128) {
 	tot := d.decodeInt(nxt)
 	arr := make([]complex128, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeComplex128(d.decodeBit())
 	}
 	return arr
 }
@@ -1041,7 +1041,7 @@ func (d *Decoder) decodeArrTime(b byte) (val []time.Time) {
 	tot := d.decodeInt(nxt)
 	arr := make([]time.Time, tot)
 	for i := 0; i < tot; i++ {
-		d.decode(&arr[i])
+		arr[i] = d.decodeTime(d.decodeBit())
 	}
 	return arr
 }
@@ -1093,9 +1093,8 @@ func (d *Decoder) decodeMapStrNil(b byte) (val map[string]interface{}) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]interface{}, tot)
 	for i := 0; i < tot; i++ {
-		var k string
 		var v interface{}
-		d.decode(&k)
+		k := d.decodeStr(d.decodeBit())
 		d.decode(&v)
 		obj[k] = v
 	}
@@ -1107,10 +1106,8 @@ func (d *Decoder) decodeMapStrVal(b byte) (val map[string]bool) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]bool, tot)
 	for i := 0; i < tot; i++ {
-		var k string
-		var v bool
-		d.decode(&k)
-		d.decode(&v)
+		k := d.decodeStr(d.decodeBit())
+		v := d.decodeVal(d.decodeBit())
 		obj[k] = v
 	}
 	return obj
@@ -1121,10 +1118,8 @@ func (d *Decoder) decodeMapStrStr(b byte) (val map[string]string) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]string, tot)
 	for i := 0; i < tot; i++ {
-		var k string
-		var v string
-		d.decode(&k)
-		d.decode(&v)
+		k := d.decodeStr(d.decodeBit())
+		v := d.decodeStr(d.decodeBit())
 		obj[k] = v
 	}
 	return obj
@@ -1135,10 +1130,8 @@ func (d *Decoder) decodeMapStrInt(b byte) (val map[string]int) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]int, tot)
 	for i := 0; i < tot; i++ {
-		var k string
-		var v int
-		d.decode(&k)
-		d.decode(&v)
+		k := d.decodeStr(d.decodeBit())
+		v := d.decodeInt(d.decodeBit())
 		obj[k] = v
 	}
 	return obj
@@ -1149,10 +1142,8 @@ func (d *Decoder) decodeMapStrUint(b byte) (val map[string]uint) {
 	tot := d.decodeInt(nxt)
 	obj := make(map[string]uint, tot)
 	for i := 0; i < tot; i++ {
-		var k string
-		var v uint
-		d.decode(&k)
-		d.decode(&v)
+		k := d.decodeStr(d.decodeBit())
+		v := d.decodeUint(d.decodeBit())
 		obj[k] = v
 	}
 	return obj
@@ -1199,44 +1190,28 @@ func (d *Decoder) decodeRef(b byte, val reflect.Value) {
 		return
 
 	case reflect.Bool:
-		var i bool
-		d.proceed(&i, b)
-		val.SetBool(i)
+		val.SetBool(d.decodeVal(b))
 
 	case reflect.String:
-		var i string
-		d.proceed(&i, b)
-		val.SetString(i)
+		val.SetString(d.decodeStr(b))
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		var i int
-		d.proceed(&i, b)
-		val.SetInt(int64(i))
+		val.SetInt(int64(d.decodeInt(b)))
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		var i uint
-		d.proceed(&i, b)
-		val.SetUint(uint64(i))
+		val.SetUint(uint64(d.decodeUint(b)))
 
 	case reflect.Float32:
-		var i float32
-		d.proceed(&i, b)
-		val.SetFloat(float64(i))
+		val.SetFloat(float64(d.decodeFloat32(b)))
 
 	case reflect.Float64:
-		var i float64
-		d.proceed(&i, b)
-		val.SetFloat(float64(i))
+		val.SetFloat(d.decodeFloat64(b))
 
 	case reflect.Complex64:
-		var i complex64
-		d.proceed(&i, b)
-		val.SetComplex(complex128(i))
+		val.SetComplex(complex128(d.decodeComplex64(b)))
 
 	case reflect.Complex128:
-		var i complex128
-		d.proceed(&i, b)
-		val.SetComplex(complex128(i))
+		val.SetComplex(d.decodeComplex128(b))
 
 	}
 
