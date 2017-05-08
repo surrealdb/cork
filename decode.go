@@ -68,7 +68,7 @@ func NewDecoderFromPool(r io.Reader) *Decoder {
 // Done flushes adds the Decoder back into the sync pool. If the
 // Decoder was not originally from the sync pool, then the
 // Decoder is discarded.
-func (d *Decoder) Done() {
+func (d *Decoder) Reset() {
 	if d.p {
 		decoders.Put(d)
 	}

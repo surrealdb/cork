@@ -69,7 +69,7 @@ func NewEncoderFromPool(w io.Writer) *Encoder {
 // Done flushes any remaing data and adds the Encoder back into
 // the sync pool. If the Encoder was not originally from the
 // sync pool, then the Encoder is discarded.
-func (e *Encoder) Done() {
+func (e *Encoder) Reset() {
 	if e.p {
 		encoders.Put(e)
 	}
