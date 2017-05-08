@@ -611,21 +611,13 @@ func (d *Decoder) decodeBin(b byte) (val []byte) {
 	case b >= cFixBin && b <= cFixBin+fixedBin:
 		sze = int(b - cFixBin)
 	case b == cBin8:
-		var tmp uint8
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(d.r.ReadOne())
 	case b == cBin16:
-		var tmp uint16
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 	case b == cBin32:
-		var tmp uint32
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 	case b == cBin64:
-		var tmp uint64
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 	}
 	return d.r.ReadMany(sze)
 }
@@ -636,21 +628,13 @@ func (d *Decoder) decodeStr(b byte) (val string) {
 	case b >= cFixStr && b <= cFixStr+fixedStr:
 		sze = int(b - cFixStr)
 	case b == cStr8:
-		var tmp uint8
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(d.r.ReadOne())
 	case b == cStr16:
-		var tmp uint16
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 	case b == cStr32:
-		var tmp uint32
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 	case b == cStr64:
-		var tmp uint64
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 	}
 	return d.r.ReadText(sze)
 }
@@ -661,21 +645,13 @@ func (d *Decoder) decodeExt(b byte) (val Corker) {
 	case b >= cFixExt && b <= cFixExt+fixedExt:
 		sze = int(b - cFixExt)
 	case b == cExt8:
-		var tmp uint8
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(d.r.ReadOne())
 	case b == cExt16:
-		var tmp uint16
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 	case b == cExt32:
-		var tmp uint32
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 	case b == cExt64:
-		var tmp uint64
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 	}
 	bit := d.r.ReadOne()
 	bin := d.r.ReadMany(sze)
@@ -693,21 +669,13 @@ func (d *Decoder) decodeCrk(b byte, val Corker) {
 	case b >= cFixExt && b <= cFixExt+fixedExt:
 		sze = int(b - cFixExt)
 	case b == cExt8:
-		var tmp uint8
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(d.r.ReadOne())
 	case b == cExt16:
-		var tmp uint16
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 	case b == cExt32:
-		var tmp uint32
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 	case b == cExt64:
-		var tmp uint64
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 	}
 	d.r.ReadOne()
 	bin := d.r.ReadMany(sze)
@@ -724,21 +692,13 @@ func (d *Decoder) decodeTxt(b byte) (val []byte) {
 	case b >= cFixStr && b <= cFixStr+fixedStr:
 		sze = int(b - cFixStr)
 	case b == cStr8:
-		var tmp uint8
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(d.r.ReadOne())
 	case b == cStr16:
-		var tmp uint16
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 	case b == cStr32:
-		var tmp uint32
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 	case b == cStr64:
-		var tmp uint64
-		binary.Read(d.r, binary.BigEndian, &tmp)
-		sze = int(tmp)
+		sze = int(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 	}
 	return d.r.ReadMany(sze)
 }
@@ -774,23 +734,19 @@ func (d *Decoder) decodeInt1(b byte) (val int8) {
 }
 
 func (d *Decoder) decodeInt8(b byte) (val int8) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return int8(d.r.ReadOne())
 }
 
 func (d *Decoder) decodeInt16(b byte) (val int16) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return int16(binary.BigEndian.Uint16(d.r.ReadMany(2)))
 }
 
 func (d *Decoder) decodeInt32(b byte) (val int32) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return int32(binary.BigEndian.Uint32(d.r.ReadMany(4)))
 }
 
 func (d *Decoder) decodeInt64(b byte) (val int64) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return int64(binary.BigEndian.Uint64(d.r.ReadMany(8)))
 }
 
 func (d *Decoder) decodeUint(b byte) (val uint) {
@@ -818,29 +774,24 @@ func (d *Decoder) decodeUint1(b byte) (val uint8) {
 }
 
 func (d *Decoder) decodeUint8(b byte) (val uint8) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return uint8(d.r.ReadOne())
 }
 
 func (d *Decoder) decodeUint16(b byte) (val uint16) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return binary.BigEndian.Uint16(d.r.ReadMany(2))
 }
 
 func (d *Decoder) decodeUint32(b byte) (val uint32) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return binary.BigEndian.Uint32(d.r.ReadMany(4))
 }
 
 func (d *Decoder) decodeUint64(b byte) (val uint64) {
-	binary.Read(d.r, binary.BigEndian, &val)
-	return
+	return binary.BigEndian.Uint64(d.r.ReadMany(8))
 }
 
 func (d *Decoder) decodeTime(b byte) (val time.Time) {
-	var tmp int64
-	binary.Read(d.r, binary.BigEndian, &tmp)
-	return time.Unix(0, tmp).UTC()
+	tme := int64(binary.BigEndian.Uint64(d.r.ReadMany(8)))
+	return time.Unix(0, tme).UTC()
 }
 
 func (d *Decoder) decodeFloat32(b byte) (val float32) {

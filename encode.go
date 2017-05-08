@@ -17,7 +17,6 @@ package cork
 import (
 	"bytes"
 	"encoding"
-	"encoding/binary"
 	"io"
 	"math"
 	"reflect"
@@ -609,21 +608,26 @@ func (e *Encoder) encodeLen8(val uint8) {
 }
 
 func (e *Encoder) encodeLen16(val uint16) {
-	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeLen32(val uint32) {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeLen64(val uint64) {
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 56))
+	e.encodeBit(byte(val >> 48))
+	e.encodeBit(byte(val >> 40))
+	e.encodeBit(byte(val >> 32))
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 // --------------------------------------------------
@@ -695,23 +699,28 @@ func (e *Encoder) encodeInt8Fixed(val int8) {
 
 func (e *Encoder) encodeInt16Fixed(val int16) {
 	e.encodeBit(cInt16)
-	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, uint16(val))
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeInt32Fixed(val int32) {
 	e.encodeBit(cInt32)
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, uint32(val))
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeInt64Fixed(val int64) {
 	e.encodeBit(cInt64)
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, uint64(val))
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 56))
+	e.encodeBit(byte(val >> 48))
+	e.encodeBit(byte(val >> 40))
+	e.encodeBit(byte(val >> 32))
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 // --------------------------------------------------
@@ -783,23 +792,28 @@ func (e *Encoder) encodeUint8Fixed(val uint8) {
 
 func (e *Encoder) encodeUint16Fixed(val uint16) {
 	e.encodeBit(cUint16)
-	buf := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeUint32Fixed(val uint32) {
 	e.encodeBit(cUint32)
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 func (e *Encoder) encodeUint64Fixed(val uint64) {
 	e.encodeBit(cUint64)
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, val)
-	e.w.Write(buf)
+	e.encodeBit(byte(val >> 56))
+	e.encodeBit(byte(val >> 48))
+	e.encodeBit(byte(val >> 40))
+	e.encodeBit(byte(val >> 32))
+	e.encodeBit(byte(val >> 24))
+	e.encodeBit(byte(val >> 16))
+	e.encodeBit(byte(val >> 8))
+	e.encodeBit(byte(val))
 }
 
 // --------------------------------------------------
@@ -809,45 +823,74 @@ func (e *Encoder) encodeUint64Fixed(val uint64) {
 // --------------------------------------------------
 
 func (e *Encoder) encodeFloat32(val float32) {
+	tmp := math.Float32bits(val)
 	e.encodeBit(cFloat32)
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint32(buf, math.Float32bits(val))
-	e.w.Write(buf)
-	return
+	e.encodeBit(byte(tmp >> 24))
+	e.encodeBit(byte(tmp >> 16))
+	e.encodeBit(byte(tmp >> 8))
+	e.encodeBit(byte(tmp))
 }
 
 func (e *Encoder) encodeFloat64(val float64) {
+	tmp := math.Float64bits(val)
 	e.encodeBit(cFloat64)
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, math.Float64bits(val))
-	e.w.Write(buf)
-	return
+	e.encodeBit(byte(tmp >> 56))
+	e.encodeBit(byte(tmp >> 48))
+	e.encodeBit(byte(tmp >> 40))
+	e.encodeBit(byte(tmp >> 32))
+	e.encodeBit(byte(tmp >> 24))
+	e.encodeBit(byte(tmp >> 16))
+	e.encodeBit(byte(tmp >> 8))
+	e.encodeBit(byte(tmp))
 }
 
 func (e *Encoder) encodeComplex64(val complex64) {
+	one := math.Float32bits(float32(real(val)))
+	two := math.Float32bits(float32(imag(val)))
 	e.encodeBit(cComplex64)
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint32(buf[:4], math.Float32bits(float32(real(val))))
-	binary.BigEndian.PutUint32(buf[4:], math.Float32bits(float32(imag(val))))
-	e.w.Write(buf)
-	return
+	e.encodeBit(byte(one >> 24))
+	e.encodeBit(byte(one >> 16))
+	e.encodeBit(byte(one >> 8))
+	e.encodeBit(byte(one))
+	e.encodeBit(byte(two >> 24))
+	e.encodeBit(byte(two >> 16))
+	e.encodeBit(byte(two >> 8))
+	e.encodeBit(byte(two))
 }
 
 func (e *Encoder) encodeComplex128(val complex128) {
+	one := math.Float64bits(float64(real(val)))
+	two := math.Float64bits(float64(imag(val)))
 	e.encodeBit(cComplex128)
-	buf := make([]byte, 16)
-	binary.BigEndian.PutUint64(buf[:8], math.Float64bits(float64(real(val))))
-	binary.BigEndian.PutUint64(buf[8:], math.Float64bits(float64(imag(val))))
-	e.w.Write(buf)
-	return
+	e.encodeBit(byte(one >> 56))
+	e.encodeBit(byte(one >> 48))
+	e.encodeBit(byte(one >> 40))
+	e.encodeBit(byte(one >> 32))
+	e.encodeBit(byte(one >> 24))
+	e.encodeBit(byte(one >> 16))
+	e.encodeBit(byte(one >> 8))
+	e.encodeBit(byte(one))
+	e.encodeBit(byte(two >> 56))
+	e.encodeBit(byte(two >> 48))
+	e.encodeBit(byte(two >> 40))
+	e.encodeBit(byte(two >> 32))
+	e.encodeBit(byte(two >> 24))
+	e.encodeBit(byte(two >> 16))
+	e.encodeBit(byte(two >> 8))
+	e.encodeBit(byte(two))
 }
 
 func (e *Encoder) encodeTime(val time.Time) {
+	tmp := uint64(val.UTC().UnixNano())
 	e.encodeBit(cTime)
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, uint64(val.UTC().UnixNano()))
-	e.w.Write(buf)
-	return
+	e.encodeBit(byte(tmp >> 56))
+	e.encodeBit(byte(tmp >> 48))
+	e.encodeBit(byte(tmp >> 40))
+	e.encodeBit(byte(tmp >> 32))
+	e.encodeBit(byte(tmp >> 24))
+	e.encodeBit(byte(tmp >> 16))
+	e.encodeBit(byte(tmp >> 8))
+	e.encodeBit(byte(tmp))
 }
 
 // --------------------------------------------------
