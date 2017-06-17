@@ -1,7 +1,11 @@
 package: github.com/abcum/cork
-import: []
+import:
+- package: github.com/abcum/bump
 testImport:
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2
   subpackages:
   - convey
+- package: github.com/ugorji/go
+  subpackages:
+  - codec
