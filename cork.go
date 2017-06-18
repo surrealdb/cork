@@ -71,7 +71,7 @@ const (
 	_                = 0
 	cArr             = 0xFC
 	cMap             = 0xFD
-	cSym             = 0xFE
+	cSlf             = 0xFE
 	cAlt             = 0xFF
 	_                = 0
 )
@@ -81,4 +81,11 @@ type Corker interface {
 	ExtendCORK() byte
 	MarshalCORK() ([]byte, error)
 	UnmarshalCORK([]byte) error
+}
+
+// Selfer represents an object which can encode and decode itself.
+type Selfer interface {
+	ExtendCORK() byte
+	MarshalCORK(*Writer) error
+	UnmarshalCORK(*Reader) error
 }

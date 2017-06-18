@@ -22,8 +22,13 @@ var registry = make(map[byte]reflect.Type)
 
 // Register adds a Corker type to the registry, enabling the
 // object type to be encoded and decoded using the Corker methods.
-func Register(value Corker) {
+func Register(value interface{}) {
 
-	registry[value.ExtendCORK()] = reflect.TypeOf(value).Elem()
+	switch val := value.(type) {
+	case Corker:
+		registry[val.ExtendCORK()] = reflect.TypeOf(val).Elem()
+	case Selfer:
+		registry[val.ExtendCORK()] = reflect.TypeOf(val).Elem()
+	}
 
 }
