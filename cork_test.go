@@ -16,6 +16,7 @@ package cork
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -25,52 +26,221 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type TestInt int
+// ----------------------------------------------------------------------
 
-type TestStr string
-
-type TestSelferText struct {
-	Test string
+var handle = &Handle{
+	ArrType: make([]interface{}, 0),
+	MapType: make(map[string]interface{}),
 }
 
-func (this *TestSelferText) MarshalText() (text []byte, err error) {
-	text = []byte("TEXT")
-	return
+// ----------------------------------------------------------------------
+
+type CustomAny interface{}
+type CustomBool bool
+type CustomInt int
+type CustomInt8 int8
+type CustomInt16 int16
+type CustomInt32 int32
+type CustomInt64 int64
+type CustomUint uint
+type CustomUint8 uint8
+type CustomUint16 uint16
+type CustomUint32 uint32
+type CustomUint64 uint64
+type CustomFloat32 float32
+type CustomFloat64 float64
+type CustomString string
+
+type Custom struct {
+	Nil             interface{}
+	Null            interface{}
+	Bool            bool
+	String          string
+	Bytes           []byte
+	Time            time.Time
+	Int             int
+	Int8            int8
+	Int16           int16
+	Int32           int32
+	Int64           int64
+	Uint            uint
+	Uint8           uint8
+	Uint16          uint16
+	Uint32          uint32
+	Uint64          uint64
+	Float32         float32
+	Float64         float64
+	Complex64       complex64
+	Complex128      complex128
+	Any             interface{}
+	ArrBool         []bool
+	ArrString       []string
+	ArrInt          []int
+	ArrInt8         []int8
+	ArrInt16        []int16
+	ArrInt32        []int32
+	ArrInt64        []int64
+	ArrUint         []uint
+	ArrUint8        []uint8
+	ArrUint16       []uint16
+	ArrUint32       []uint32
+	ArrUint64       []uint64
+	ArrFloat32      []float32
+	ArrFloat64      []float64
+	ArrComplex64    []complex64
+	ArrComplex128   []complex128
+	ArrTime         []time.Time
+	ArrAny          []interface{}
+	ArrNo           string
+	MapStringInt    map[string]int
+	MapStringUint   map[string]uint
+	MapStringBool   map[string]bool
+	MapStringString map[string]string
+	MapIntAny       map[int]interface{}
+	MapUintAny      map[uint]interface{}
+	MapStringAny    map[string]interface{}
+	MapTimeAny      map[time.Time]interface{}
+	MapAnyAny       map[interface{}]interface{}
+	MapNo           string
+	CustomBool      CustomBool
+	CustomString    CustomString
+	CustomInt       CustomInt
+	CustomInt8      CustomInt8
+	CustomInt16     CustomInt16
+	CustomInt32     CustomInt32
+	CustomInt64     CustomInt64
+	CustomUint      CustomUint
+	CustomUint8     CustomUint8
+	CustomUint16    CustomUint16
+	CustomUint32    CustomUint32
+	CustomUint64    CustomUint64
+	CustomFloat32   CustomFloat32
+	CustomFloat64   CustomFloat64
+	CustomAny       CustomAny
+	Tignored        *Tested
+	Signored        *Selfed
+	Cignored        *Corked
+	Testable        *Tested
+	Selfable        *Selfed
+	Corkable        *Corked
+	Funcable        func()
+	Chanable        chan int
+	Drrayble        []Corked
+	Arrayble        []*Corked
+	Embedded        struct {
+		One string
+		Two int
+		Ced *Corked
+		Sed *Selfed
+	}
 }
 
-func (this *TestSelferText) UnmarshalText(text []byte) (err error) {
-	this.Test = string(text)
-	return
+// ----------------------------------------------------------------------
+
+type CustomTextFailer struct {
+	Field string
 }
 
-type TestSelferBinary struct {
-	Test string
+func (this *CustomTextFailer) MarshalText() ([]byte, error) {
+	return nil, errors.New("Marshal error")
 }
 
-func (this *TestSelferBinary) MarshalBinary() (data []byte, err error) {
-	data = []byte("DATA")
-	return
+func (this *CustomTextFailer) UnmarshalText(v []byte) error {
+	return errors.New("Unmarshal error")
 }
 
-func (this *TestSelferBinary) UnmarshalBinary(data []byte) (err error) {
-	this.Test = string(data)
-	return
+type CustomBinaryFailer struct {
+	Field string
 }
+
+func (this *CustomBinaryFailer) MarshalBinary() ([]byte, error) {
+	return nil, errors.New("Marshal error")
+}
+
+func (this *CustomBinaryFailer) UnmarshalBinary(v []byte) error {
+	return errors.New("Unmarshal error")
+}
+
+// ----------------------------------------------------------------------
+
+type CustomTextMarshaler struct {
+	Field string
+}
+
+func (this *CustomTextMarshaler) MarshalText() ([]byte, error) {
+	return []byte(this.Field), nil
+}
+
+func (this *CustomTextMarshaler) UnmarshalText(v []byte) error {
+	this.Field = string(v)
+	return nil
+}
+
+type CustomBinaryMarshaler struct {
+	Field string
+}
+
+func (this *CustomBinaryMarshaler) MarshalBinary() ([]byte, error) {
+	return []byte(this.Field), nil
+}
+
+func (this *CustomBinaryMarshaler) UnmarshalBinary(v []byte) error {
+	this.Field = string(v)
+	return nil
+}
+
+// ----------------------------------------------------------------------
 
 type Tested struct {
 	Name  string
 	Data  []byte `cork:"data"`
 	Temp  []string
+	Test  map[string]string
 	priv  bool
 	Count int
 	Omit  string `cork:"-"`
 	Empty string `cork:",omitempty"`
 }
 
+// ----------------------------------------------------------------------
+
+type Errord struct{}
+
+func (this *Errord) ExtendCORK() byte {
+	return 0x00
+}
+
+func (this *Errord) MarshalCORK() (dst []byte, err error) {
+	return nil, errors.New("Marshal error")
+}
+
+func (this *Errord) UnmarshalCORK(src []byte) (err error) {
+	return errors.New("Unmarshal error")
+}
+
+// ----------------------------------------------------------------------
+
+type Simple struct{}
+
+func (this *Simple) ExtendCORK() byte {
+	return 0x01
+}
+
+func (this *Simple) MarshalCORK() (dst []byte, err error) {
+	return
+}
+
+func (this *Simple) UnmarshalCORK(src []byte) (err error) {
+	return
+}
+
+// ----------------------------------------------------------------------
+
 type Corked struct {
 	Name  string
-	Data  []byte `cork:"data"`
-	Temp  []string
+	Data  []byte   `cork:"data"`
+	Temp  []string `cork:"-"`
+	Test  map[string]string
 	priv  bool
 	Count int
 	Omit  string `cork:"-"`
@@ -78,7 +248,7 @@ type Corked struct {
 }
 
 func (this *Corked) ExtendCORK() byte {
-	return 0x01
+	return 0x02
 }
 
 func (this *Corked) MarshalCORK() (dst []byte, err error) {
@@ -87,6 +257,7 @@ func (this *Corked) MarshalCORK() (dst []byte, err error) {
 	e.Encode(this.Name)
 	e.Encode(this.Data)
 	e.Encode(this.Temp)
+	e.Encode(this.Test)
 	e.Encode(this.Count)
 	return b.Bytes(), nil
 }
@@ -97,842 +268,1101 @@ func (this *Corked) UnmarshalCORK(src []byte) (err error) {
 	d.Decode(&this.Name)
 	d.Decode(&this.Data)
 	d.Decode(&this.Temp)
+	d.Decode(&this.Test)
 	d.Decode(&this.Count)
 	return
 }
 
-func TestBasic(t *testing.T) {
+// ----------------------------------------------------------------------
 
-	Convey("Static methods wil encode <=> decode", t, func() {
-		obj := "test"
-		enc := Encode(obj)
-		dec := Decode(enc)
-		So(dec, ShouldResemble, obj)
-	})
-
+type Selfed struct {
+	Name  string
+	Data  []byte   `cork:"data"`
+	Temp  []string `cork:"-"`
+	Test  map[string]string
+	priv  bool
+	Count int
+	Omit  string `cork:"-"`
+	Empty string `cork:",omitempty"`
 }
 
-func TestCorkers(t *testing.T) {
+func (this *Selfed) ExtendCORK() byte {
+	return 0x03
+}
 
+func (this *Selfed) MarshalCORK(w *Writer) (err error) {
+	w.EncodeString(this.Name)
+	w.EncodeBytes(this.Data)
+	w.EncodeArr(this.Temp)
+	w.EncodeMap(this.Test)
+	w.EncodeInt(this.Count)
+	return
+}
+
+func (this *Selfed) UnmarshalCORK(r *Reader) (err error) {
+	r.DecodeString(&this.Name)
+	r.DecodeBytes(&this.Data)
+	r.DecodeArr(&this.Temp)
+	r.DecodeMap(&this.Test)
+	r.DecodeInt(&this.Count)
+	return
+}
+
+// ----------------------------------------------------------------------
+
+type Complex struct {
+	Bool            bool
+	String          string
+	Bytes           []byte
+	Time            time.Time
+	Int             int
+	Int8            int8
+	Int16           int16
+	Int32           int32
+	Int64           int64
+	Uint            uint
+	Uint8           uint8
+	Uint16          uint16
+	Uint32          uint32
+	Uint64          uint64
+	Float32         float32
+	Float64         float64
+	Complex64       complex64
+	Complex128      complex128
+	Any             interface{}
+	ArrBool         []bool
+	ArrString       []string
+	ArrInt          []int
+	ArrInt8         []int8
+	ArrInt16        []int16
+	ArrInt32        []int32
+	ArrInt64        []int64
+	ArrUint         []uint
+	ArrUint8        []uint8
+	ArrUint16       []uint16
+	ArrUint32       []uint32
+	ArrUint64       []uint64
+	ArrFloat32      []float32
+	ArrFloat64      []float64
+	ArrComplex64    []complex64
+	ArrComplex128   []complex128
+	ArrTime         []time.Time
+	ArrAny          []interface{}
+	ArrNo           string
+	MapStringInt    map[string]int
+	MapStringUint   map[string]uint
+	MapStringBool   map[string]bool
+	MapStringString map[string]string
+	MapIntAny       map[int]interface{}
+	MapUintAny      map[uint]interface{}
+	MapStringAny    map[string]interface{}
+	MapTimeAny      map[time.Time]interface{}
+	MapAnyAny       map[interface{}]interface{}
+	MapNo           string
+}
+
+func (this *Complex) ExtendCORK() byte {
+	return 0x04
+}
+
+func (this *Complex) MarshalCORK(w *Writer) (err error) {
+	w.EncodeBool(this.Bool)
+	w.EncodeString(this.String)
+	w.EncodeBytes(this.Bytes)
+	w.EncodeTime(this.Time)
+	w.EncodeInt(this.Int)
+	w.EncodeInt8(this.Int8)
+	w.EncodeInt16(this.Int16)
+	w.EncodeInt32(this.Int32)
+	w.EncodeInt64(this.Int64)
+	w.EncodeUint(this.Uint)
+	w.EncodeUint8(this.Uint8)
+	w.EncodeUint16(this.Uint16)
+	w.EncodeUint32(this.Uint32)
+	w.EncodeUint64(this.Uint64)
+	w.EncodeFloat32(this.Float32)
+	w.EncodeFloat64(this.Float64)
+	w.EncodeComplex64(this.Complex64)
+	w.EncodeComplex128(this.Complex128)
+	w.EncodeAny(this.Any)
+	w.EncodeArr(this.ArrBool)
+	w.EncodeArr(this.ArrString)
+	w.EncodeArr(this.ArrInt)
+	w.EncodeArr(this.ArrInt8)
+	w.EncodeArr(this.ArrInt16)
+	w.EncodeArr(this.ArrInt32)
+	w.EncodeArr(this.ArrInt64)
+	w.EncodeArr(this.ArrUint)
+	w.EncodeArr(this.ArrUint8)
+	w.EncodeArr(this.ArrUint16)
+	w.EncodeArr(this.ArrUint32)
+	w.EncodeArr(this.ArrUint64)
+	w.EncodeArr(this.ArrFloat32)
+	w.EncodeArr(this.ArrFloat64)
+	w.EncodeArr(this.ArrComplex64)
+	w.EncodeArr(this.ArrComplex128)
+	w.EncodeArr(this.ArrTime)
+	w.EncodeArr(this.ArrAny)
+	w.EncodeArr(this.ArrNo)
+	w.EncodeMap(this.MapStringInt)
+	w.EncodeMap(this.MapStringUint)
+	w.EncodeMap(this.MapStringBool)
+	w.EncodeMap(this.MapStringString)
+	w.EncodeMap(this.MapIntAny)
+	w.EncodeMap(this.MapUintAny)
+	w.EncodeMap(this.MapStringAny)
+	w.EncodeMap(this.MapTimeAny)
+	w.EncodeMap(this.MapAnyAny)
+	w.EncodeMap(this.MapNo)
+	return
+}
+
+func (this *Complex) UnmarshalCORK(r *Reader) (err error) {
+	r.DecodeBool(&this.Bool)
+	r.DecodeString(&this.String)
+	r.DecodeBytes(&this.Bytes)
+	r.DecodeTime(&this.Time)
+	r.DecodeInt(&this.Int)
+	r.DecodeInt8(&this.Int8)
+	r.DecodeInt16(&this.Int16)
+	r.DecodeInt32(&this.Int32)
+	r.DecodeInt64(&this.Int64)
+	r.DecodeUint(&this.Uint)
+	r.DecodeUint8(&this.Uint8)
+	r.DecodeUint16(&this.Uint16)
+	r.DecodeUint32(&this.Uint32)
+	r.DecodeUint64(&this.Uint64)
+	r.DecodeFloat32(&this.Float32)
+	r.DecodeFloat64(&this.Float64)
+	r.DecodeComplex64(&this.Complex64)
+	r.DecodeComplex128(&this.Complex128)
+	r.DecodeAny(&this.Any)
+	r.DecodeArr(&this.ArrBool)
+	r.DecodeArr(&this.ArrString)
+	r.DecodeArr(&this.ArrInt)
+	r.DecodeArr(&this.ArrInt8)
+	r.DecodeArr(&this.ArrInt16)
+	r.DecodeArr(&this.ArrInt32)
+	r.DecodeArr(&this.ArrInt64)
+	r.DecodeArr(&this.ArrUint)
+	r.DecodeArr(&this.ArrUint8)
+	r.DecodeArr(&this.ArrUint16)
+	r.DecodeArr(&this.ArrUint32)
+	r.DecodeArr(&this.ArrUint64)
+	r.DecodeArr(&this.ArrFloat32)
+	r.DecodeArr(&this.ArrFloat64)
+	r.DecodeArr(&this.ArrComplex64)
+	r.DecodeArr(&this.ArrComplex128)
+	r.DecodeArr(&this.ArrTime)
+	r.DecodeArr(&this.ArrAny)
+	r.DecodeArr(&this.ArrNo)
+	r.DecodeMap(&this.MapStringInt)
+	r.DecodeMap(&this.MapStringUint)
+	r.DecodeMap(&this.MapStringBool)
+	r.DecodeMap(&this.MapStringString)
+	r.DecodeMap(&this.MapIntAny)
+	r.DecodeMap(&this.MapUintAny)
+	r.DecodeMap(&this.MapStringAny)
+	r.DecodeMap(&this.MapTimeAny)
+	r.DecodeMap(&this.MapAnyAny)
+	r.DecodeMap(&this.MapNo)
+	return
+}
+
+// ----------------------------------------------------------------------
+
+var str = "This is the very last time that I should have to test this"
+
+var bin = []byte{
+	84, 104, 105, 115, 32, 105, 115, 32, 116, 104, 101, 32, 118, 101,
+	114, 121, 32, 108, 97, 115, 116, 32, 116, 105, 109, 101, 32, 116,
+	104, 97, 116, 32, 73, 32, 115, 104, 111, 117, 108, 100, 32, 104, 97,
+	118, 101, 32, 116, 111, 32, 116, 101, 115, 116, 32, 116, 104, 105, 115,
+}
+
+var lng = append(bin, append(bin, append(bin, append(bin, bin...)...)...)...)
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+
+func init() {
+	Register(&Simple{})
 	Register(&Corked{})
-
-	enc := Encode(&Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""})
-
-	tst := []byte{
-		cExt8, cFixInt + 0x11, 0x01,
-		cFixStr + 0x04, 116, 101, 115, 116,
-		cFixBin + 0x04, 116, 101, 115, 116,
-		cArr, cFixInt + 0x02, 129, 49, 129, 50,
-		25,
-	}
-
-	Convey("Just check", t, func() {
-		So(enc, ShouldResemble, tst)
-	})
-
-	Convey("Test decode into: interface{}", t, func() {
-		var out interface{}
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: Corked", t, func() {
-		var out Corked
-		chk := Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: Corked{}", t, func() {
-		out := Corked{}
-		chk := Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	// TODO fix this failing test
-	/*Convey("Test decode into: *Corked (direct)", t, func() {
-		var out *Corked
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})*/
-
-	Convey("Test decode into: *Corked (pointer)", t, func() {
-		var out *Corked
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: &Corked{} (direct)", t, func() {
-		out := &Corked{}
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: &Corked{} (pointer)", t, func() {
-		out := &Corked{}
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: new(Corked) (direct)", t, func() {
-		out := new(Corked)
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
-	Convey("Test decode into: new(Corked) (pointer)", t, func() {
-		out := new(Corked)
-		chk := &Corked{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(err, ShouldBeNil)
-		So(out, ShouldResemble, chk)
-	})
-
+	Register(&Selfed{})
+	Register(&Complex{})
 }
 
-func TestSelfers(t *testing.T) {
+func TestGeneral(t *testing.T) {
 
-	Convey("Test TestSelferText", t, func() {
-		var out TestSelferText
-		obj := new(TestSelferText)
-		enc := Encode(obj)
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(enc, ShouldResemble, []byte{cFixStr + 0x04, 84, 69, 88, 84})
-		So(err, ShouldBeNil)
-		So(out.Test, ShouldResemble, "TEXT")
+	tme, _ := time.Parse(time.RFC3339, "1987-06-22T08:00:00.123456789Z")
+
+	Convey("nil will encode and decode", t, func() {
+		var tmp interface{}
+		var val = interface{}(nil)
+		var bit = []byte{cNil}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	Convey("Test TestSelferBinary", t, func() {
-		var out TestSelferBinary
-		obj := new(TestSelferBinary)
-		enc := Encode(obj)
-		buf := bytes.NewBuffer(enc)
-		err := NewDecoder(buf).Decode(&out)
-		So(enc, ShouldResemble, []byte{cFixBin + 0x04, 68, 65, 84, 65})
-		So(err, ShouldBeNil)
-		So(out.Test, ShouldResemble, "DATA")
+	Convey("true will encode and decode", t, func() {
+		var tmp bool
+		var val = true
+		var bit = []byte{cTrue}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-}
-
-func TestComplex(t *testing.T) {
-
-	bef := Tested{"test", []byte("test"), []string{"1", "2"}, true, 25, "test", ""}
-	err := Tested{"", []byte(nil), nil, false, 0, "", ""}
-	aft := Tested{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""}
-	oth := map[string]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int64(25)}
-	gen := map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int64(25)}
-
-	Convey("Nil will decode into interface{}", t, func() {
-		var out interface{}
-		enc := Encode(nil)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(&out)
-		So(out, ShouldResemble, nil)
+	Convey("false will encode and decode", t, func() {
+		var tmp bool
+		var val = false
+		var bit = []byte{cFalse}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	// ----------------------------------------------------------------------------------------------------
-
-	Convey("Object will not decode into interface{} (direct)", t, func() {
-		var out interface{}
-		enc := Encode(bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(out)
-		So(out, ShouldResemble, nil)
+	Convey("byte will encode and decode", t, func() {
+		var tmp byte
+		var val = byte('a')
+		var bit = []byte{97}
+		var oth = int(97)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, oth)
 	})
 
-	Convey("Object (direct) will not decode into Tested (direct)", t, func() {
-		var out Tested
-		enc := Encode(bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(out)
-		So(out, ShouldResemble, err)
+	Convey("string will encode and decode", t, func() {
+		var tmp string
+		var val = "Hello"
+		var bit = []byte{cFixStr + 0x05, 72, 101, 108, 108, 111}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	Convey("Object (pointer) will not decode into Tested (direct)", t, func() {
-		var out Tested
-		enc := Encode(&bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(out)
-		So(out, ShouldResemble, err)
+	Convey("string8 will encode and decode", t, func() {
+		var tmp string
+		var val = str
+		var bit = append([]byte{cStr8, 58}, bin...)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	// ----------------------------------------------------------------------------------------------------
-
-	Convey("Object will decode into interface{} (pointer)", t, func() {
-		var out interface{}
-		enc := Encode(bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(&out)
-		So(out, ShouldResemble, gen)
+	Convey("string16 will encode and decode", t, func() {
+		var tmp string
+		var val = str + str + str + str + str
+		var bit = append([]byte{cStr16, 1, 34}, lng...)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	Convey("Object (direct) will decode into Tested (pointer)", t, func() {
-		var out Tested
-		enc := Encode(bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(&out)
-		So(out, ShouldResemble, aft)
+	Convey("[]byte will encode and decode", t, func() {
+		var tmp []byte
+		var val = []byte{72, 101, 108, 108, 111}
+		var bit = []byte{cFixBin + 0x05, 72, 101, 108, 108, 111}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	Convey("Object (pointer) will decode into Tested (pointer)", t, func() {
-		var out Tested
-		enc := Encode(&bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Decode(&out)
-		So(out, ShouldResemble, aft)
+	Convey("[]byte8 will encode and decode", t, func() {
+		var tmp []byte
+		var val = bin
+		var bit = append([]byte{cBin8, 58}, bin...)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	// ----------------------------------------------------------------------------------------------------
-
-	Convey("Object will decode into MapType", t, func() {
-		var opt Handle
-		var out interface{}
-		opt.MapType = reflect.TypeOf(map[string]interface{}{})
-		enc := Encode(bef)
-		buf := bytes.NewBuffer(enc)
-		NewDecoder(buf).Options(&opt).Decode(&out)
-		So(out, ShouldResemble, oth)
+	Convey("[]byte16 will encode and decode", t, func() {
+		var tmp []byte
+		var val = lng
+		var bit = append([]byte{cBin16, 1, 34}, lng...)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-}
-
-func TestComplete(t *testing.T) {
-
-	clock, _ := time.Parse(time.RFC3339, "1987-06-22T08:00:00.123456789Z")
-
-	str := "This is the very last time that I should have to test this"
-
-	bin := []byte{
-		84, 104, 105, 115, 32, 105, 115, 32, 116, 104, 101, 32, 118, 101,
-		114, 121, 32, 108, 97, 115, 116, 32, 116, 105, 109, 101, 32, 116,
-		104, 97, 116, 32, 73, 32, 115, 104, 111, 117, 108, 100, 32, 104, 97,
-		118, 101, 32, 116, 111, 32, 116, 101, 115, 116, 32, 116, 104, 105, 115,
-	}
-
-	mstr := str + str + str + str + str
-	mbin := append(bin, append(bin, append(bin, append(bin, bin...)...)...)...)
-
-	var opt Handle
-	opt.Precision = true
-	opt.ArrType = reflect.TypeOf([]interface{}{})
-	opt.MapType = reflect.TypeOf(map[interface{}]interface{}{})
-
-	dec := []interface{}{
-		true,
-		false,
-		"one",
-		clock,
-		TestInt(1),
-		TestStr("Hi"),
-		float32(math.Pi),
-		float64(math.Pi),
-		complex64(math.Pi),
-		complex128(math.Pi),
-		[]bool{true, false},
-		[]string{"one", "two"},
-		[]int8{1, 2, 3, math.MaxInt8},
-		[]int16{1, 2, 3, math.MaxInt16},
-		[]int32{1, 2, 3, math.MaxInt32},
-		[]int64{1, 2, 3, math.MaxInt64},
-		[]uint16{1, 2, 3, math.MaxUint16},
-		[]uint32{1, 2, 3, math.MaxUint32},
-		[]uint64{1, 2, 3, math.MaxUint64},
-		[]float32{1, 2, 3, math.Pi},
-		[]float64{1, 2, 3, math.Pi},
-		[]complex64{1, 2, 3, math.MaxUint64},
-		[]complex128{1, 2, 3, math.MaxUint64},
-		[]time.Time{clock, clock, clock, clock},
-		[]interface{}{int8(1), "2", int16(3), int32(4), uint64(5)},
-		Tested{"test", []byte("test"), []string{"1", "2"}, false, 25, "", ""},
-		// Corked{"test", []byte("test"), false, 25, "", ""},
-		map[string]interface{}{
-			"1": "test",
-			"2": map[interface{}]interface{}{
-				true: []byte("Check"),
-			},
-			"3": map[interface{}]interface{}{
-				"s-str": str,
-				"b-str": bin,
-				"s-bin": mstr,
-				"b-bin": mbin,
-			},
-		},
-	}
-
-	rev := []interface{}{
-		true,
-		false,
-		"one",
-		clock,
-		int64(1),
-		string("Hi"),
-		float32(math.Pi),
-		float64(math.Pi),
-		complex64(math.Pi),
-		complex128(math.Pi),
-		[]interface{}{true, false},
-		[]interface{}{"one", "two"},
-		[]interface{}{int8(1), int8(2), int8(3), int8(math.MaxInt8)},
-		[]interface{}{int16(1), int16(2), int16(3), int16(math.MaxInt16)},
-		[]interface{}{int32(1), int32(2), int32(3), int32(math.MaxInt32)},
-		[]interface{}{int64(1), int64(2), int64(3), int64(math.MaxInt64)},
-		[]interface{}{uint16(1), uint16(2), uint16(3), uint16(math.MaxUint16)},
-		[]interface{}{uint32(1), uint32(2), uint32(3), uint32(math.MaxUint32)},
-		[]interface{}{uint64(1), uint64(2), uint64(3), uint64(math.MaxUint64)},
-		[]interface{}{float32(1), float32(2), float32(3), float32(math.Pi)},
-		[]interface{}{float64(1), float64(2), float64(3), float64(math.Pi)},
-		[]interface{}{complex64(1), complex64(2), complex64(3), complex64(math.MaxUint64)},
-		[]interface{}{complex128(1), complex128(2), complex128(3), complex128(math.MaxUint64)},
-		[]interface{}{clock, clock, clock, clock},
-		[]interface{}{int8(1), "2", int16(3), int32(4), uint64(5)},
-		map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Count": int8(25)},
-		// &Corked{"test", []byte("test"), false, 25, "", ""},
-		map[interface{}]interface{}{
-			"1": "test",
-			"2": map[interface{}]interface{}{
-				true: []byte("Check"),
-			},
-			"3": map[interface{}]interface{}{
-				"s-str": str,
-				"b-str": bin,
-				"s-bin": mstr,
-				"b-bin": mbin,
-			},
-		},
-	}
-
-	Convey("Object should encode <=> decode into interface{}", t, func() {
-		var out interface{}
-		buf := bytes.NewBuffer(nil)
-		eer := NewEncoder(buf).Options(&opt).Encode(dec)
-		der := NewDecoder(buf).Options(&opt).Decode(&out)
-		So(eer, ShouldBeNil)
-		So(der, ShouldBeNil)
-		So(out, ShouldResemble, rev)
+	Convey("int will encode and decode", t, func() {
+		var tmp int
+		var val = int(1)
+		var bit = []byte{1}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
 	})
 
-	Convey("Object should encode <=> decode into []interface{}", t, func() {
-		var out []interface{}
-		buf := bytes.NewBuffer(nil)
-		eer := NewEncoder(buf).Options(&opt).Encode(dec)
-		der := NewDecoder(buf).Options(&opt).Decode(&out)
-		So(eer, ShouldBeNil)
-		So(der, ShouldBeNil)
-		So(out, ShouldResemble, rev)
+	Convey("int8 will encode and decode", t, func() {
+		var tmp int8
+		var val = int8(math.MaxInt8)
+		var bit = []byte{127}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, int(val))
 	})
 
-	Convey("Object should encode <=> decode into []interface{}{}", t, func() {
-		out := []interface{}{}
-		buf := bytes.NewBuffer(nil)
-		eer := NewEncoder(buf).Options(&opt).Encode(dec)
-		der := NewDecoder(buf).Options(&opt).Decode(&out)
-		So(eer, ShouldBeNil)
-		So(der, ShouldBeNil)
-		So(out, ShouldResemble, rev)
+	Convey("int16 will encode and decode", t, func() {
+		var tmp int16
+		var val = int16(math.MaxInt16)
+		var bit = []byte{cInt16, 127, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, int(val))
 	})
 
-	for k, v := range dec {
+	Convey("int32 will encode and decode", t, func() {
+		var tmp int32
+		var val = int32(math.MaxInt32)
+		var bit = []byte{cInt32, 127, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, int(val))
+	})
 
-		Convey(fmt.Sprintf("Object element: %T - should encode <=> decode into %T", v, v), t, func() {
-			buf := bytes.NewBuffer(nil)
-			out := reflect.New(reflect.TypeOf(v))
-			eer := NewEncoder(buf).Options(&opt).Encode(v)
-			der := NewDecoder(buf).Options(&opt).Decode(out.Interface())
-			So(eer, ShouldBeNil)
-			So(der, ShouldBeNil)
-			So(out.Elem().Interface(), ShouldResemble, dec[k])
-		})
+	Convey("int64 will encode and decode", t, func() {
+		var tmp int64
+		var val = int64(math.MaxInt64)
+		var bit = []byte{cInt64, 127, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, int(val))
+	})
 
-		Convey(fmt.Sprintf("Object element: %T - should encode <=> decode into interface{}", v), t, func() {
-			var out interface{}
-			buf := bytes.NewBuffer(nil)
-			eer := NewEncoder(buf).Options(&opt).Encode(v)
-			der := NewDecoder(buf).Options(&opt).Decode(&out)
-			So(eer, ShouldBeNil)
-			So(der, ShouldBeNil)
-			So(out, ShouldResemble, rev[k])
-		})
+	Convey("uint will encode and decode", t, func() {
+		var tmp uint
+		var val = uint(1)
+		var bit = []byte{1}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, int(val))
+	})
 
-		Convey(fmt.Sprintf("Object element: %T - attempt decoding into inverse objects...", v), t, func() {
+	Convey("uint16 will encode and decode", t, func() {
+		var tmp uint16
+		var val = uint16(math.MaxUint16)
+		var bit = []byte{cUint16, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, uint(val))
+	})
 
-			if reflect.TypeOf(v).Kind() != reflect.Bool {
-				var out bool
-				tester(&opt, &out, v)
-			}
+	Convey("uint32 will encode and decode", t, func() {
+		var tmp uint32
+		var val = uint32(math.MaxUint32)
+		var bit = []byte{cUint32, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, uint(val))
+	})
 
-			if reflect.TypeOf(v).Kind() != reflect.String {
-				var out string
-				tester(&opt, &out, v)
-			}
+	Convey("uint64 will encode and decode", t, func() {
+		var tmp uint64
+		var val = uint64(math.MaxUint64)
+		var bit = []byte{cUint64, 255, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, uint(val))
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out int
-				tester(&opt, &out, v)
-			}
+	Convey("float32 will encode and decode", t, func() {
+		var tmp float32
+		var val = float32(math.Pi)
+		var bit = []byte{cFloat32, 64, 73, 15, 219}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out int8
-				tester(&opt, &out, v)
-			}
+	Convey("float32 will encode and decode into float64", t, func() {
+		var tmp float64
+		var val = float32(math.Pi)
+		var gen = float64(float32(math.Pi))
+		var bit = []byte{cFloat32, 64, 73, 15, 219}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out int16
-				tester(&opt, &out, v)
-			}
+	Convey("float64 will encode and decode", t, func() {
+		var tmp float64
+		var val = float64(math.Pi)
+		var bit = []byte{cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out int32
-				tester(&opt, &out, v)
-			}
+	Convey("complex64 will encode and decode", t, func() {
+		var tmp complex64
+		var val = complex64(math.Pi)
+		var bit = []byte{cComplex64, 64, 73, 15, 219, 0, 0, 0, 0}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out int64
-				tester(&opt, &out, v)
-			}
+	Convey("complex128 will encode and decode", t, func() {
+		var tmp complex128
+		var val = complex128(math.Pi)
+		var bit = []byte{cComplex128, 64, 9, 33, 251, 84, 68, 45, 24, 0, 0, 0, 0, 0, 0, 0, 0}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out uint
-				tester(&opt, &out, v)
-			}
+	Convey("time.Time will encode and decode", t, func() {
+		var tmp time.Time
+		var val = tme
+		var bit = []byte{cTime, 7, 166, 199, 91, 123, 67, 205, 21}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, val)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out uint8
-				tester(&opt, &out, v)
-			}
+	Convey("CustomInt will encode and decode", t, func() {
+		var tmp CustomInt
+		var val = CustomInt(666)
+		var gen = int(666)
+		var bit = []byte{cInt16, 2, 154}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out uint16
-				tester(&opt, &out, v)
-			}
+	Convey("CustomString will encode and decode", t, func() {
+		var tmp CustomString
+		var val = CustomString("Hello")
+		var gen = "Hello"
+		var bit = []byte{cFixStr + 0x05, 72, 101, 108, 108, 111}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out uint32
-				tester(&opt, &out, v)
-			}
+	Convey("Tested will encode and decode", t, func() {
+		var tmp Tested
+		var val = Tested{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "Omitted", ""}
+		var oth = Tested{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""}
+		var gen = map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Test": map[interface{}]interface{}{"1": "2"}, "Count": int(25)}
+		var bit = []byte{cFixMap + 0x05, /**/
+			cFixStr + 0x04, 78, 97, 109, 101, cFixStr + 0x04, 116, 101, 115, 116, /**/
+			cFixStr + 0x04, 100, 97, 116, 97, cFixBin + 0x04, 116, 101, 115, 116, /**/
+			cFixStr + 0x04, 84, 101, 109, 112, cFixArr + 0x02, 129, 49, 129, 50, /**/
+			cFixStr + 0x04, 84, 101, 115, 116, cFixMap + 0x01, 129, 49, 129, 50, /**/
+			cFixStr + 0x05, 67, 111, 117, 110, 116 /**/, 25,
+		}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, oth)
+		So(dec, ShouldResemble, gen)
+	})
 
-			if isNotNum(reflect.TypeOf(v).Kind()) {
-				var out uint64
-				tester(&opt, &out, v)
-			}
+	Convey("*Tested will encode and decode", t, func() {
+		var tmp Tested
+		var val = Tested{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "Omitted", ""}
+		var oth = Tested{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""}
+		var gen = map[interface{}]interface{}{"Name": "test", "data": []byte("test"), "Temp": []interface{}{"1", "2"}, "Test": map[interface{}]interface{}{"1": "2"}, "Count": int(25)}
+		var bit = []byte{cFixMap + 0x05, /**/
+			cFixStr + 0x04, 78, 97, 109, 101, cFixStr + 0x04, 116, 101, 115, 116, /**/
+			cFixStr + 0x04, 100, 97, 116, 97, cFixBin + 0x04, 116, 101, 115, 116, /**/
+			cFixStr + 0x04, 84, 101, 109, 112, cFixArr + 0x02, 129, 49, 129, 50, /**/
+			cFixStr + 0x04, 84, 101, 115, 116, cFixMap + 0x01, 129, 49, 129, 50, /**/
+			cFixStr + 0x05, 67, 111, 117, 110, 116 /**/, 25,
+		}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, oth)
+		So(dec, ShouldResemble, gen)
+	})
 
-			if isNotFloat(reflect.TypeOf(v).Kind()) {
-				var out float32
-				tester(&opt, &out, v)
-			}
-
-			if isNotFloat(reflect.TypeOf(v).Kind()) {
-				var out float64
-				tester(&opt, &out, v)
-			}
-
-			if isNotComplex(reflect.TypeOf(v).Kind()) {
-				var out complex64
-				tester(&opt, &out, v)
-			}
-
-			if isNotComplex(reflect.TypeOf(v).Kind()) {
-				var out complex128
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v) != reflect.TypeOf(time.Time{}) {
-				var out time.Time
-				tester(&opt, &out, v)
-			}
-
-			// --------------------------------------------------
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []bool
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []string
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []int
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []int8
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []int16
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []int32
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []int64
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []uint
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []uint8
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []uint16
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []uint32
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []uint64
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []float32
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []float64
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []complex64
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []complex128
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []time.Time
-				tester(&opt, &out, v)
-			}
-
-			if reflect.TypeOf(v).Kind() != reflect.Slice {
-				var out []interface{}
-				tester(&opt, &out, v)
-			}
-
-			// --------------------------------------------------
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[string]int
-				tester(&opt, &out, v)
-			}
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[string]uint
-				tester(&opt, &out, v)
-			}
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[string]bool
-				tester(&opt, &out, v)
-			}
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[string]string
-				tester(&opt, &out, v)
-			}
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[string]interface{}
-				tester(&opt, &out, v)
-			}
-
-			if isNotMap(reflect.TypeOf(v).Kind()) {
-				var out map[interface{}]interface{}
-				tester(&opt, &out, v)
-			}
-
-		})
-
-	}
-
-}
-
-func TestPrecision(t *testing.T) {
-
-	tests := []struct {
-		dec interface{}
-		rlx []byte
-		pre []byte
-	}{
-		{
-			dec: int(1),
-			rlx: []byte{1},
-			pre: []byte{1},
-		},
-		{
-			dec: int8(1),
-			rlx: []byte{1},
-			pre: []byte{cInt8, 1},
-		},
-		{
-			dec: int8(math.MaxInt8),
-			rlx: []byte{127},
-			pre: []byte{cInt8, 127},
-		},
-		{
-			dec: int16(1),
-			rlx: []byte{1},
-			pre: []byte{cInt16, 0, 1},
-		},
-		{
-			dec: int16(math.MaxInt8),
-			rlx: []byte{127},
-			pre: []byte{cInt16, 0, 127},
-		},
-		{
-			dec: int16(math.MaxInt16),
-			rlx: []byte{cInt16, 127, 255},
-			pre: []byte{cInt16, 127, 255},
-		},
-		{
-			dec: int32(1),
-			rlx: []byte{1},
-			pre: []byte{cInt32, 0, 0, 0, 1},
-		},
-		{
-			dec: int32(math.MaxInt8),
-			rlx: []byte{127},
-			pre: []byte{cInt32, 0, 0, 0, 127},
-		},
-		{
-			dec: int32(math.MaxInt16),
-			rlx: []byte{cInt16, 127, 255},
-			pre: []byte{cInt32, 0, 0, 127, 255},
-		},
-		{
-			dec: int32(math.MaxInt32),
-			rlx: []byte{cInt32, 127, 255, 255, 255},
-			pre: []byte{cInt32, 127, 255, 255, 255},
-		},
-		{
-			dec: int64(1),
-			rlx: []byte{1},
-			pre: []byte{cInt64, 0, 0, 0, 0, 0, 0, 0, 1},
-		},
-		{
-			dec: int64(math.MaxInt8),
-			rlx: []byte{127},
-			pre: []byte{cInt64, 0, 0, 0, 0, 0, 0, 0, 127},
-		},
-		{
-			dec: int64(math.MaxInt16),
-			rlx: []byte{cInt16, 127, 255},
-			pre: []byte{cInt64, 0, 0, 0, 0, 0, 0, 127, 255},
-		},
-		{
-			dec: int64(math.MaxInt32),
-			rlx: []byte{cInt32, 127, 255, 255, 255},
-			pre: []byte{cInt64, 0, 0, 0, 0, 127, 255, 255, 255},
-		},
-		{
-			dec: int64(math.MaxInt64),
-			rlx: []byte{cInt64, 127, 255, 255, 255, 255, 255, 255, 255},
-			pre: []byte{cInt64, 127, 255, 255, 255, 255, 255, 255, 255},
-		},
-		{
-			dec: uint(1),
-			rlx: []byte{1},
-			pre: []byte{1},
-		},
-		{
-			dec: uint8(1),
-			rlx: []byte{1},
-			pre: []byte{cUint8, 1},
-		},
-		{
-			dec: uint8(math.MaxUint8),
-			rlx: []byte{cUint8, 255},
-			pre: []byte{cUint8, 255},
-		},
-		{
-			dec: uint16(1),
-			rlx: []byte{1},
-			pre: []byte{cUint16, 0, 1},
-		},
-		{
-			dec: uint16(math.MaxUint8),
-			rlx: []byte{cUint8, 255},
-			pre: []byte{cUint16, 0, 255},
-		},
-		{
-			dec: uint16(math.MaxUint16),
-			rlx: []byte{cUint16, 255, 255},
-			pre: []byte{cUint16, 255, 255},
-		},
-		{
-			dec: uint32(1),
-			rlx: []byte{1},
-			pre: []byte{cUint32, 0, 0, 0, 1},
-		},
-		{
-			dec: uint32(math.MaxUint8),
-			rlx: []byte{cUint8, 255},
-			pre: []byte{cUint32, 0, 0, 0, 255},
-		},
-		{
-			dec: uint32(math.MaxUint16),
-			rlx: []byte{cUint16, 255, 255},
-			pre: []byte{cUint32, 0, 0, 255, 255},
-		},
-		{
-			dec: uint32(math.MaxUint32),
-			rlx: []byte{cUint32, 255, 255, 255, 255},
-			pre: []byte{cUint32, 255, 255, 255, 255},
-		},
-		{
-			dec: uint64(1),
-			rlx: []byte{1},
-			pre: []byte{cUint64, 0, 0, 0, 0, 0, 0, 0, 1},
-		},
-		{
-			dec: uint64(math.MaxUint8),
-			rlx: []byte{cUint8, 255},
-			pre: []byte{cUint64, 0, 0, 0, 0, 0, 0, 0, 255},
-		},
-		{
-			dec: uint64(math.MaxUint16),
-			rlx: []byte{cUint16, 255, 255},
-			pre: []byte{cUint64, 0, 0, 0, 0, 0, 0, 255, 255},
-		},
-		{
-			dec: uint64(math.MaxUint32),
-			rlx: []byte{cUint32, 255, 255, 255, 255},
-			pre: []byte{cUint64, 0, 0, 0, 0, 255, 255, 255, 255},
-		},
-		{
-			dec: uint64(math.MaxUint64),
-			rlx: []byte{cUint64, 255, 255, 255, 255, 255, 255, 255, 255},
-			pre: []byte{cUint64, 255, 255, 255, 255, 255, 255, 255, 255},
-		},
-		{
-			dec: float32(math.Pi),
-			rlx: []byte{cFloat32, 64, 73, 15, 219},
-			pre: []byte{cFloat32, 64, 73, 15, 219},
-		},
-		{
-			dec: float64(math.Pi),
-			rlx: []byte{cFloat64, 64, 9, 33, 251, 84, 68, 45, 24},
-			pre: []byte{cFloat64, 64, 9, 33, 251, 84, 68, 45, 24},
-		},
-		{
-			dec: complex64(math.Pi),
-			rlx: []byte{cComplex64, 64, 73, 15, 219, 0, 0, 0, 0},
-			pre: []byte{cComplex64, 64, 73, 15, 219, 0, 0, 0, 0},
-		},
-		{
-			dec: complex128(math.Pi),
-			rlx: []byte{cComplex128, 64, 9, 33, 251, 84, 68, 45, 24, 0, 0, 0, 0, 0, 0, 0, 0},
-			pre: []byte{cComplex128, 64, 9, 33, 251, 84, 68, 45, 24, 0, 0, 0, 0, 0, 0, 0, 0},
-		},
-	}
-
-	// ----------------------------------------------------------------------------------------------------
-
-	for _, test := range tests {
-
-		var opt Handle
-
-		Convey(fmt.Sprintf("Object should encode and decode (with Precision)  --- %T : %v", test.dec, test.dec), t, func() {
-			opt.Precision = true
-			buf := bytes.NewBuffer(nil)
-			out := reflect.New(reflect.TypeOf(test.dec))
-			NewEncoder(buf).Options(&opt).Encode(test.dec)
-			So(buf.Bytes(), ShouldResemble, test.pre)
-			NewDecoder(buf).Options(&opt).Decode(out.Interface())
-			So(out.Elem().Interface(), ShouldResemble, test.dec)
-		})
-
-		Convey(fmt.Sprintf("Object should encode and decode (without Precision) --- %T : %v", test.dec, test.dec), t, func() {
-			opt.Precision = false
-			buf := bytes.NewBuffer(nil)
-			out := reflect.New(reflect.TypeOf(test.dec))
-			NewEncoder(buf).Options(&opt).Encode(test.dec)
-			So(buf.Bytes(), ShouldResemble, test.rlx)
-			NewDecoder(buf).Options(&opt).Decode(out.Interface())
-			So(out.Elem().Interface(), ShouldResemble, test.dec)
-		})
-
-		Convey(fmt.Sprintf("Object should encode and decode (with Precision) into interface  --- %T : %v", test.dec, test.dec), t, func() {
-			var out interface{}
-			opt.Precision = true
-			buf := bytes.NewBuffer(nil)
-			NewEncoder(buf).Options(&opt).Encode(test.dec)
-			So(buf.Bytes(), ShouldResemble, test.pre)
-			NewDecoder(buf).Options(&opt).Decode(&out)
-			So(out, ShouldEqual, test.dec)
-		})
-
-		Convey(fmt.Sprintf("Object should encode and decode (without Precision) into interface  --- %T : %v", test.dec, test.dec), t, func() {
-			var out interface{}
-			opt.Precision = false
-			buf := bytes.NewBuffer(nil)
-			NewEncoder(buf).Options(&opt).Encode(test.dec)
-			So(buf.Bytes(), ShouldResemble, test.rlx)
-			NewDecoder(buf).Options(&opt).Decode(&out)
-			So(out, ShouldEqual, test.dec)
-		})
-
-	}
-
-}
-
-func tester(opt *Handle, out, val interface{}) {
-	Convey(fmt.Sprintf("Object element: %T - will fail to encode <=> decode into %T", val, out), func() {
-		buf := bytes.NewBuffer(nil)
-		eer := NewEncoder(buf).Options(opt).Encode(val)
-		der := NewDecoder(buf).Options(opt).Decode(out)
-		So(eer, ShouldBeNil)
+	Convey("*Errord will not encode and decode", t, func() {
+		var tmp Errord
+		var val = &Errord{}
+		var bit = []byte{cFixExt + 0x00}
+		eer := NewEncoder(bytes.NewBuffer(nil)).Encode(val)
+		der := NewDecoder(bytes.NewReader(bit)).Decode(&tmp)
+		So(eer, ShouldNotBeNil)
 		So(der, ShouldNotBeNil)
 	})
+
+	Convey("*Simple will encode and decode", t, func() {
+		var tmp Simple
+		var val = &Simple{}
+		var gen = *val
+		var bit = []byte{cFixExt, 0x01}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, val)
+	})
+
+	Convey("*Corked will encode and decode", t, func() {
+		var tmp Corked
+		var val = &Corked{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""}
+		var gen = *val
+		var bit = []byte{cExt8, 0x15, 0x02, /**/
+			cFixStr + 0x04, 116, 101, 115, 116, /**/
+			cFixBin + 0x04, 116, 101, 115, 116, /**/
+			cFixArr + 0x02, 129, 49, 129, 50, /**/
+			cFixMap + 0x01, 129, 49, 129, 50, /**/
+			25,
+		}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, val)
+	})
+
+	Convey("*Selfed will encode and decode", t, func() {
+		var tmp Selfed
+		var val = &Selfed{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""}
+		var gen = *val
+		var bit = []byte{cSlf, 0x03, /**/
+			cFixStr + 0x04, 116, 101, 115, 116, /**/
+			cFixBin + 0x04, 116, 101, 115, 116, /**/
+			cFixArr + 0x02, 129, 49, 129, 50, /**/
+			cFixMap + 0x01, 129, 49, 129, 50, /**/
+			25,
+		}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, val)
+	})
+
+	Convey("[]bool will encode and decode", t, func() {
+		var tmp []bool
+		var val = []bool{true, false}
+		var gen = []interface{}{true, false}
+		var bit = []byte{cFixArr + 0x02, cTrue, cFalse}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]string will encode and decode", t, func() {
+		var tmp []string
+		var val = []string{"Hello", "World"}
+		var gen = []interface{}{"Hello", "World"}
+		var bit = []byte{cFixArr + 0x02 /**/, cFixStr + 0x05, 72, 101, 108, 108, 111 /**/, cFixStr + 0x05, 87, 111, 114, 108, 100}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]int will encode and decode", t, func() {
+		var tmp []int
+		var val = []int{0, 1, math.MaxInt8, math.MaxInt16, math.MaxInt32, math.MaxInt64}
+		var gen = []interface{}{0, 1, math.MaxInt8, math.MaxInt16, math.MaxInt32, math.MaxInt64}
+		var bit = []byte{cFixArr + 0x06 /**/, 0 /**/, 1 /**/, 127 /**/, cInt16, 127, 255 /**/, cInt32, 127, 255, 255, 255 /**/, cInt64, 127, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]int8 will encode and decode", t, func() {
+		var tmp []int8
+		var val = []int8{1, math.MaxInt8}
+		var gen = []interface{}{1, math.MaxInt8}
+		var bit = []byte{cFixArr + 0x02 /**/, 1 /**/, 127}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]int16 will encode and decode", t, func() {
+		var tmp []int16
+		var val = []int16{1, math.MaxInt8, math.MaxInt16}
+		var gen = []interface{}{1, math.MaxInt8, math.MaxInt16}
+		var bit = []byte{cFixArr + 0x03 /**/, 1 /**/, 127 /**/, cInt16, 127, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]int32 will encode and decode", t, func() {
+		var tmp []int32
+		var val = []int32{1, math.MaxInt8, math.MaxInt16, math.MaxInt32}
+		var gen = []interface{}{1, math.MaxInt8, math.MaxInt16, math.MaxInt32}
+		var bit = []byte{cFixArr + 0x04 /**/, 1 /**/, 127 /**/, cInt16, 127, 255 /**/, cInt32, 127, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]int64 will encode and decode", t, func() {
+		var tmp []int64
+		var val = []int64{1, math.MaxInt8, math.MaxInt16, math.MaxInt32, math.MaxInt64}
+		var gen = []interface{}{1, math.MaxInt8, math.MaxInt16, math.MaxInt32, math.MaxInt64}
+		var bit = []byte{cFixArr + 0x05 /**/, 1 /**/, 127 /**/, cInt16, 127, 255 /**/, cInt32, 127, 255, 255, 255 /**/, cInt64, 127, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]uint will encode and decode", t, func() {
+		var tmp []uint
+		var val = []uint{0, 1, math.MaxUint8, math.MaxUint16, math.MaxUint32, math.MaxUint64}
+		var gen = []interface{}{int(0), int(1), uint(math.MaxUint8), uint(math.MaxUint16), uint(math.MaxUint32), uint(math.MaxUint64)}
+		var bit = []byte{cFixArr + 0x06 /**/, 0 /**/, 1, cUint8, 255 /**/, cUint16, 255, 255 /**/, cUint32, 255, 255, 255, 255 /**/, cUint64, 255, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]uint16 will encode and decode", t, func() {
+		var tmp []uint16
+		var val = []uint16{1, math.MaxUint8, math.MaxUint16}
+		var gen = []interface{}{int(1), uint(math.MaxUint8), uint(math.MaxUint16)}
+		var bit = []byte{cFixArr + 0x03 /**/, 1 /**/, cUint8, 255 /**/, cUint16, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]uint32 will encode and decode", t, func() {
+		var tmp []uint32
+		var val = []uint32{1, math.MaxUint8, math.MaxUint16, math.MaxUint32}
+		var gen = []interface{}{int(1), uint(math.MaxUint8), uint(math.MaxUint16), uint(math.MaxUint32)}
+		var bit = []byte{cFixArr + 0x04 /**/, 1 /**/, cUint8, 255 /**/, cUint16, 255, 255 /**/, cUint32, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]uint64 will encode and decode", t, func() {
+		var tmp []uint64
+		var val = []uint64{1, math.MaxUint8, math.MaxUint16, math.MaxUint32, math.MaxUint64}
+		var gen = []interface{}{int(1), uint(math.MaxUint8), uint(math.MaxUint16), uint(math.MaxUint32), uint(math.MaxUint64)}
+		var bit = []byte{cFixArr + 0x05 /**/, 1 /**/, cUint8, 255 /**/, cUint16, 255, 255 /**/, cUint32, 255, 255, 255, 255 /**/, cUint64, 255, 255, 255, 255, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]float32 will encode and decode", t, func() {
+		var tmp []float32
+		var val = []float32{math.Pi, math.Pi}
+		var gen = []interface{}{float32(math.Pi), float32(math.Pi)}
+		var bit = []byte{cFixArr + 0x02 /**/, cFloat32, 64, 73, 15, 219 /**/, cFloat32, 64, 73, 15, 219}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]float64 will encode and decode", t, func() {
+		var tmp []float64
+		var val = []float64{math.Pi, math.Pi}
+		var gen = []interface{}{float64(math.Pi), float64(math.Pi)}
+		var bit = []byte{cFixArr + 0x02 /**/, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24 /**/, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]complex64 will encode and decode", t, func() {
+		var tmp []complex64
+		var val = []complex64{math.Pi, math.Pi}
+		var gen = []interface{}{complex64(math.Pi), complex64(math.Pi)}
+		var bit = []byte{cFixArr + 0x02 /**/, cComplex64, 64, 73, 15, 219, 0, 0, 0, 0 /**/, cComplex64, 64, 73, 15, 219, 0, 0, 0, 0}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]complex128 will encode and decode", t, func() {
+		var tmp []complex128
+		var val = []complex128{math.Pi, math.Pi}
+		var gen = []interface{}{complex128(math.Pi), complex128(math.Pi)}
+		var bit = []byte{cFixArr + 0x02 /**/, cComplex128, 64, 9, 33, 251, 84, 68, 45, 24, 0, 0, 0, 0, 0, 0, 0, 0 /**/, cComplex128, 64, 9, 33, 251, 84, 68, 45, 24, 0, 0, 0, 0, 0, 0, 0, 0}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]time.Time will encode and decode", t, func() {
+		var tmp []time.Time
+		var val = []time.Time{tme, tme}
+		var gen = []interface{}{tme, tme}
+		var bit = []byte{cFixArr + 0x02 /**/, cTime, 7, 166, 199, 91, 123, 67, 205, 21 /**/, cTime, 7, 166, 199, 91, 123, 67, 205, 21}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]interface{} will encode and decode", t, func() {
+		var tmp []interface{}
+		var val = []interface{}{nil, true, false, "test", []byte("test"), int8(77), uint16(177), float64(math.Pi)}
+		var gen = []interface{}{nil, true, false, "test", []byte("test"), int(77), uint(177), float64(math.Pi)}
+		var bit = []byte{cFixArr + 0x08 /**/, cNil, cTrue, cFalse /**/, cFixStr + 0x04, 116, 101, 115, 116 /**/, cFixBin + 0x04, 116, 101, 115, 116 /**/, 77 /**/, cUint8, 177 /**/, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("[]interface{} will encode and decode", t, func() {
+		var tmp []interface{}
+		var val = [][][]float64{{{math.Pi}}, {{math.Pi}}}
+		var gen = []interface{}{[]interface{}{[]interface{}{math.Pi}}, []interface{}{[]interface{}{math.Pi}}}
+		var bit = []byte{cFixArr + 0x02 /**/, cFixArr + 0x01, cFixArr + 0x01, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24 /**/, cFixArr + 0x01, cFixArr + 0x01, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, gen)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[string]bool will encode and decode", t, func() {
+		var tmp map[string]bool
+		var val = map[string]bool{"test": true}
+		var gen = map[interface{}]interface{}{"test": true}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cTrue}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[string]int will encode and decode", t, func() {
+		var tmp map[string]int
+		var val = map[string]int{"test": math.MaxInt32}
+		var gen = map[interface{}]interface{}{"test": math.MaxInt32}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cInt32, 127, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[string]uint will encode and decode", t, func() {
+		var tmp map[string]uint
+		var val = map[string]uint{"test": math.MaxUint32}
+		var gen = map[interface{}]interface{}{"test": uint(math.MaxUint32)}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cUint32, 255, 255, 255, 255}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[string]string will encode and decode", t, func() {
+		var tmp map[string]string
+		var val = map[string]string{"test": "Hello"}
+		var gen = map[interface{}]interface{}{"test": "Hello"}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cFixStr + 0x05, 72, 101, 108, 108, 111}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[int]interface{} will encode and decode", t, func() {
+		var tmp map[int]interface{}
+		var val = map[int]interface{}{math.MaxInt8: math.Pi}
+		var gen = map[interface{}]interface{}{int(math.MaxInt8): float64(math.Pi)}
+		var bit = []byte{cFixMap + 0x01 /**/, 127, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[uint]interface{} will encode and decode", t, func() {
+		var tmp map[uint]interface{}
+		var val = map[uint]interface{}{math.MaxUint8: math.Pi}
+		var gen = map[interface{}]interface{}{uint(math.MaxUint8): float64(math.Pi)}
+		var bit = []byte{cFixMap + 0x01 /**/, cUint8, 255, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[string]interface{} will encode and decode", t, func() {
+		var tmp map[string]interface{}
+		var val = map[string]interface{}{"test": math.Pi}
+		var gen = map[interface{}]interface{}{"test": math.Pi}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[time.Time]interface{} will encode and decode", t, func() {
+		var tmp map[time.Time]interface{}
+		var val = map[time.Time]interface{}{tme: math.Pi}
+		var gen = map[interface{}]interface{}{tme: math.Pi}
+		var bit = []byte{cFixMap + 0x01 /**/, cTime, 7, 166, 199, 91, 123, 67, 205, 21, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("map[interface{}]interface{} will encode and decode", t, func() {
+		var tmp map[interface{}]interface{}
+		var val = map[interface{}]interface{}{"test": math.Pi}
+		var gen = map[interface{}]interface{}{"test": math.Pi}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116, cFloat64, 64, 9, 33, 251, 84, 68, 45, 24}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("embedded map[string]interface{} will encode and decode", t, func() {
+		var tmp map[string]interface{}
+		var val = map[string]interface{}{"test": map[string]interface{}{"test": "Embedded"}}
+		var oth = map[string]interface{}{"test": map[interface{}]interface{}{"test": "Embedded"}}
+		var gen = map[interface{}]interface{}{"test": map[interface{}]interface{}{"test": "Embedded"}}
+		var bit = []byte{cFixMap + 0x01 /**/, cFixStr + 0x04, 116, 101, 115, 116 /**/, cFixMap + 0x01, cFixStr + 0x04, 116, 101, 115, 116, cFixStr + 0x08, 69, 109, 98, 101, 100, 100, 101, 100}
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, oth)
+		So(dec, ShouldResemble, gen)
+	})
+
+	Convey("CustomTextMarshaler will encode and decode", t, func() {
+		var tmp CustomTextMarshaler
+		var val = &CustomTextMarshaler{Field: "TEXT"}
+		var bit = []byte{cFixBin + 0x04, 84, 69, 88, 84}
+		var oth = []byte("TEXT")
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(&tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, oth)
+	})
+
+	Convey("CustomBinaryMarshaler will encode and decode", t, func() {
+		var tmp CustomBinaryMarshaler
+		var val = &CustomBinaryMarshaler{Field: "DATA"}
+		var bit = []byte{cFixBin + 0x04, 68, 65, 84, 65}
+		var oth = []byte("DATA")
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		DecodeInto(bit, &tmp)
+		So(enc, ShouldResemble, bit)
+		So(&tmp, ShouldResemble, val)
+		So(dec, ShouldResemble, oth)
+	})
+
+	Convey("CustomTextFailer will not encode and decode", t, func() {
+		var tmp CustomTextFailer
+		var val = &CustomTextFailer{Field: "TEXT"}
+		var bit = []byte{cFixBin + 0x04, 84, 69, 88, 84}
+		eer := NewEncoder(bytes.NewBuffer(nil)).Encode(val)
+		der := NewDecoder(bytes.NewReader(bit)).Decode(&tmp)
+		So(eer, ShouldNotBeNil)
+		So(der, ShouldNotBeNil)
+	})
+
+	Convey("CustomBinaryFailer will not encode and decode", t, func() {
+		var tmp CustomBinaryFailer
+		var val = &CustomBinaryFailer{Field: "DATA"}
+		var bit = []byte{cFixBin + 0x04, 68, 65, 84, 65}
+		eer := NewEncoder(bytes.NewBuffer(nil)).Encode(val)
+		der := NewDecoder(bytes.NewReader(bit)).Decode(&tmp)
+		So(eer, ShouldNotBeNil)
+		So(der, ShouldNotBeNil)
+	})
+
+	Convey("func will not encode and decode", t, func() {
+		var tmp interface{}
+		var val = func() {}
+		var bit = []byte{cNil}
+		var oth = interface{}(nil)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, oth)
+		So(dec, ShouldResemble, oth)
+	})
+
+	Convey("channel will not encode and decode", t, func() {
+		var tmp interface{}
+		var val = make(chan int)
+		var bit = []byte{cNil}
+		var oth = interface{}(nil)
+		var enc = Encode(val)
+		var dec = Decode(bit)
+		So(enc, ShouldResemble, bit)
+		So(tmp, ShouldResemble, oth)
+		So(dec, ShouldResemble, oth)
+	})
+
 }
 
 func isNotNum(v reflect.Kind) bool {
@@ -955,4 +1385,365 @@ func isNotFloat(v reflect.Kind) bool {
 
 func isNotComplex(v reflect.Kind) bool {
 	return v != reflect.Complex64 && v != reflect.Complex128
+}
+
+func tester(out, val interface{}) {
+	buf := bytes.NewBuffer(nil)
+	enc := NewEncoder(buf)
+	eer := enc.Encode(val)
+	dec := NewDecoder(buf)
+	der := dec.Decode(out)
+	So(eer, ShouldBeNil)
+	So(der, ShouldNotBeNil)
+}
+
+func TestInvariants(t *testing.T) {
+
+	tme, _ := time.Parse(time.RFC3339, "1987-06-22T08:00:00.123456789Z")
+
+	obj := []interface{}{
+		true,
+		false,
+		str,
+		bin,
+		lng,
+		tme,
+		CustomInt(1),
+		CustomString("Hi"),
+		float32(math.Pi),
+		float64(math.Pi),
+		complex64(math.Pi),
+		complex128(math.Pi),
+		[]bool{true, false},
+		[]string{"one", "two"},
+		[]int{1, 2, 3, math.MaxInt8},
+		[]int8{1, 2, 3, math.MaxInt8},
+		[]int16{1, 2, 3, math.MaxInt16},
+		[]int32{1, 2, 3, math.MaxInt32},
+		[]int64{1, 2, 3, math.MaxInt64},
+		[]uint{1, 2, 3, math.MaxUint16},
+		[]uint16{1, 2, 3, math.MaxUint16},
+		[]uint32{1, 2, 3, math.MaxUint32},
+		[]uint64{1, 2, 3, math.MaxUint64},
+		[]float32{1, 2, 3, math.Pi},
+		[]float64{1, 2, 3, math.Pi},
+		[]complex64{1, 2, 3, math.MaxUint64},
+		[]complex128{1, 2, 3, math.MaxUint64},
+		[]time.Time{tme, tme, tme, tme, tme, tme},
+		[]interface{}{int8(1), "2", int16(3), int32(4), uint64(5)},
+		Tested{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""},
+		Corked{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""},
+		Selfed{"test", []byte("test"), []string{"1", "2"}, map[string]string{"1": "2"}, false, 25, "", ""},
+		map[string]int{},
+		map[string]uint{},
+		map[string]bool{},
+		map[string]string{},
+		map[int]interface{}{},
+		map[uint]interface{}{},
+		map[bool]interface{}{},
+		map[string]interface{}{},
+		map[time.Time]interface{}{},
+		map[string]interface{}{
+			"1": "test",
+			"2": map[interface{}]interface{}{
+				true: []byte("Check"),
+			},
+			"3": map[interface{}]interface{}{
+				"str": str,
+				"bin": bin,
+				"lng": lng,
+			},
+		},
+	}
+
+	for _, v := range obj {
+
+		Convey(fmt.Sprintf("Attempt to incorrectly decode %T into incorrect types...", v), t, func() {
+
+			if reflect.TypeOf(v).Kind() != reflect.Bool {
+				var out bool
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.String {
+				var out string
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out int
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out int8
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out int16
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out int32
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out int64
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out uint
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out uint16
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out uint32
+				tester(&out, v)
+			}
+
+			if isNotNum(reflect.TypeOf(v).Kind()) {
+				var out uint64
+				tester(&out, v)
+			}
+
+			if isNotFloat(reflect.TypeOf(v).Kind()) {
+				var out float32
+				tester(&out, v)
+			}
+
+			if isNotFloat(reflect.TypeOf(v).Kind()) {
+				var out float64
+				tester(&out, v)
+			}
+
+			if isNotComplex(reflect.TypeOf(v).Kind()) {
+				var out complex64
+				tester(&out, v)
+			}
+
+			if isNotComplex(reflect.TypeOf(v).Kind()) {
+				var out complex128
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v) != reflect.TypeOf(time.Time{}) {
+				var out time.Time
+				tester(&out, v)
+			}
+
+			// --------------------------------------------------
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []bool
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []string
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []int
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []int8
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []int16
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []int32
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []int64
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []uint
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []uint8
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []uint16
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []uint32
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []uint64
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []float32
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []float64
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []complex64
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []complex128
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []time.Time
+				tester(&out, v)
+			}
+
+			if reflect.TypeOf(v).Kind() != reflect.Slice {
+				var out []interface{}
+				tester(&out, v)
+			}
+
+			// --------------------------------------------------
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[string]int
+				tester(&out, v)
+			}
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[string]uint
+				tester(&out, v)
+			}
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[string]bool
+				tester(&out, v)
+			}
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[string]string
+				tester(&out, v)
+			}
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[string]interface{}
+				tester(&out, v)
+			}
+
+			if isNotMap(reflect.TypeOf(v).Kind()) {
+				var out map[interface{}]interface{}
+				tester(&out, v)
+			}
+
+		})
+
+	}
+
+}
+
+func sxpand(arg string, num int) (out string) {
+	for i := 0; i < num; i++ {
+		out = out + arg
+	}
+	return
+}
+func bxpand(arg []byte, num int) (out []byte) {
+	for i := 0; i < num; i++ {
+		out = append(out, arg...)
+	}
+	return
+}
+
+func extend(args ...interface{}) (out []byte) {
+	for _, a := range args {
+		switch v := a.(type) {
+		case int:
+			out = append(out, byte(v))
+		case byte:
+			out = append(out, v)
+		case []byte:
+			out = append(out, v...)
+		}
+	}
+	return
+}
+
+func TestLargeEncoderDecoder(t *testing.T) {
+
+	var obj = []interface{}{
+		sxpand(str, 5),
+		sxpand(str, 10),
+		sxpand(str, 50),
+		sxpand(str, 100),
+		sxpand(str, 1000),
+		sxpand(str, 5000),
+		bxpand(bin, 5),
+		bxpand(bin, 10),
+		bxpand(bin, 50),
+		bxpand(bin, 100),
+		bxpand(bin, 1000),
+		bxpand(bin, 5000),
+	}
+
+	var src = extend(
+		cFixArr+0x0C,
+		cStr16, 1, 34, bxpand(bin, 5),
+		cStr16, 2, 68, bxpand(bin, 10),
+		cStr16, 11, 84, bxpand(bin, 50),
+		cStr16, 22, 168, bxpand(bin, 100),
+		cStr16, 226, 144, bxpand(bin, 1000),
+		cStr32, 0, 4, 108, 208, bxpand(bin, 5000),
+		cBin16, 1, 34, bxpand(bin, 5),
+		cBin16, 2, 68, bxpand(bin, 10),
+		cBin16, 11, 84, bxpand(bin, 50),
+		cBin16, 22, 168, bxpand(bin, 100),
+		cBin16, 226, 144, bxpand(bin, 1000),
+		cBin32, 0, 4, 108, 208, bxpand(bin, 5000),
+	)
+
+	Convey("Large encoder data encodes correctly", t, func() {
+		var dst []byte
+		enc := NewEncoderBytesFromPool(&dst)
+		enc.Encode(obj)
+		enc.Reset()
+		So(dst, ShouldResemble, src)
+	})
+
+	Convey("Large decoder data decodes correctly", t, func() {
+		var dst []interface{}
+		dec := NewDecoderBytesFromPool(src)
+		dec.Decode(&dst)
+		dec.Reset()
+		So(dst, ShouldResemble, obj)
+	})
+
 }

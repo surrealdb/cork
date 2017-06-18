@@ -17,76 +17,83 @@ package cork
 import (
 	"reflect"
 	"strings"
-	"sync"
 )
 
 type field struct {
+	omit bool
+	indx []int
 	name string
 	show string
-	item reflect.Value
 }
 
-var fields = sync.Pool{
-	New: func() interface{} {
-		return &field{}
-	},
+func (f *field) Name() string {
+	if len(f.show) > 0 {
+		return f.show
+	}
+	return f.name
 }
 
-func (f *field) done() {
-	fields.Put(f)
-}
+func newField(kind reflect.StructField) *field {
 
-func (f *field) reset(name, show string, item reflect.Value) *field {
-	f.name = name
-	f.show = show
-	f.item = item
-	return f
-}
-
-func newField(kind reflect.StructField, item reflect.Value) *field {
-
-	// Item is invalid
-	if !item.IsValid() {
+	// Field is private
+	if len(kind.PkgPath) > 0 {
 		return nil
 	}
 
-	// Item is private
-	if kind.PkgPath != "" {
+	// Field not supported
+	switch kind.Type.Kind() {
+	case reflect.Chan:
+		return nil
+	case reflect.Func:
 		return nil
 	}
 
-	opt := kind.Tag.Get(tag)
+	// Retrieve the tag
+	tag := kind.Tag.Get(tag)
 
-	if len(opt) == 0 {
-		return fields.Get().(*field).reset(kind.Name, kind.Name, item)
-	}
-
-	// Item is ignored
-	if opt == "-" {
-		return nil
-	}
-
-	idx := strings.Index(opt, ",")
-
-	// Item is renamed
-	if idx < 0 {
-		return fields.Get().(*field).reset(kind.Name, opt, item)
-	}
-
-	// Item is renamed
-	if idx > 0 {
-		if opt[idx+1:] == "omitempty" && isEmpty(item) {
-			return nil
+	// No tag specified
+	if len(tag) == 0 {
+		return &field{
+			omit: false,
+			name: kind.Name,
+			indx: kind.Index,
 		}
-		return fields.Get().(*field).reset(kind.Name, opt[:idx], item)
+	}
+
+	// Field is ignored
+	if tag == "-" {
+		return nil
+	}
+
+	idx := strings.Index(tag, ",")
+
+	// Field is renamed
+	if idx < 0 {
+		return &field{
+			omit: false,
+			name: kind.Name,
+			show: tag,
+			indx: kind.Index,
+		}
+	}
+
+	// Field is renamed
+	if idx > 0 {
+		return &field{
+			omit: tag[idx+1:] == "omitempty",
+			name: kind.Name,
+			show: tag[:idx],
+			indx: kind.Index,
+		}
 	}
 
 	// Immediate comma
 	if idx == 0 {
-		if opt[idx+1:] == "omitempty" && isEmpty(item) {
-			return nil
+		return &field{
+			omit: tag[idx+1:] == "omitempty",
+			name: kind.Name,
+			indx: kind.Index,
 		}
-		return fields.Get().(*field).reset(kind.Name, kind.Name, item)
 	}
 
 	return nil

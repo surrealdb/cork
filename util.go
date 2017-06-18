@@ -14,7 +14,7 @@
 
 package cork
 
-func isVal(b byte) bool {
+func isBool(b byte) bool {
 	return b == cTrue || b == cFalse
 }
 
@@ -42,18 +42,18 @@ func isUint(b byte) bool {
 	return b == cUint8 || b == cUint16 || b == cUint32 || b == cUint64 || isNum(b)
 }
 
-func isFloat(b byte) bool {
-	return b == cFloat32 || b == cFloat64
-}
-
 func isTime(b byte) bool {
 	return b == cTime
 }
 
 func isArr(b byte) bool {
-	return b == cArr
+	return b == cArr || (b >= cFixArr && b <= cFixArr+fixedArr)
 }
 
 func isMap(b byte) bool {
-	return b == cMap
+	return b == cMap || (b >= cFixMap && b <= cFixMap+fixedMap)
+}
+
+func isSlf(b byte) bool {
+	return b == cSlf
 }

@@ -14,18 +14,13 @@
 
 package cork
 
-type Handle struct {
-	// ArrType specifies the type of slice to use when decoding
-	// into a nil interface during schema-less decoding of a
-	// slice in the stream.
-	//
-	// If not specified, we use []interface{}
-	ArrType interface{}
+import (
+	"reflect"
+	"time"
+)
 
-	// MapType specifies the type of map to use when decoding
-	// into a nil interface during schema-less decoding of a
-	// map in the stream.
-	//
-	// If not specified, we use map[interface{}]interface{}
-	MapType interface{}
-}
+var typeStr = reflect.TypeOf("")
+var typeBit = reflect.TypeOf([]uint8(nil))
+var typeTime = reflect.TypeOf(time.Now())
+var typeSelfer = reflect.TypeOf((*Selfer)(nil)).Elem()
+var typeCorker = reflect.TypeOf((*Corker)(nil)).Elem()
