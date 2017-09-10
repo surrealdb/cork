@@ -15,6 +15,10 @@
 package cork
 
 type Handle struct {
+	// SortMaps specifies whether maps should be sorted before
+	// being encoded into CORK. This guarantees that the same
+	// input data is always encoded into the same binary data.
+	SortMaps bool
 	// ArrType specifies the type of slice to use when decoding
 	// into a nil interface during schema-less decoding of a
 	// slice in the stream.
