@@ -84,7 +84,7 @@ func NewDecoderBytesFromPool(b []byte) *Decoder {
 	return d
 }
 
-// Done flushes adds the Decoder back into the sync pool. If the
+// Reset flushes adds the Decoder back into the sync pool. If the
 // Decoder was not originally from the sync pool, then the
 // Decoder is discarded.
 func (d *Decoder) Reset() {

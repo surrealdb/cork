@@ -84,7 +84,7 @@ func NewEncoderBytesFromPool(b *[]byte) *Encoder {
 	return e
 }
 
-// Done flushes any remaing data and adds the Encoder back into
+// Reset flushes any remaing data and adds the Encoder back into
 // the sync pool. If the Encoder was not originally from the
 // sync pool, then the Encoder is discarded.
 func (e *Encoder) Reset() {
