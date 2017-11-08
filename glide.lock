@@ -1,8 +1,8 @@
 hash: bfa1fd36ed45b188aa049b1b7adcc0f9d7bf6c5b2738902c8ab2a19749a505bb
-updated: 2017-10-10T18:49:04.96839+01:00
+updated: 2017-11-08T00:37:56.581513Z
 imports:
 - name: github.com/abcum/bump
-  version: 7ba7a4e9094d5a666ef274de35f94715bbeb926c
+  version: a387c1b94124df52e6cd702ed49ac8442d13dc1f
 testImports:
 - name: github.com/gopherjs/gopherjs
   version: 415225646bb92c4449bb484646f2c95a98402f6f
@@ -22,6 +22,6 @@ testImports:
   - convey/gotest
   - convey/reporting
 - name: github.com/ugorji/go
-  version: 54210f4e076c57f351166f0ed60e67d3fca57a36
+  version: 00a57e09e383d445aeef6c6cd642969dc4360231
   subpackages:
   - codec
