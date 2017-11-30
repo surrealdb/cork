@@ -16,9 +16,7 @@ package cork
 
 import (
 	"math"
-	"reflect"
 	"time"
-	"unsafe"
 
 	"github.com/abcum/bump"
 )
@@ -48,8 +46,9 @@ func (w *Writer) writeMany(v []byte) {
 }
 
 func (w *Writer) writeText(v string) {
-	b := *(*[]byte)(unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&v))))
-	w.writeMany(b)
+	if err := w.w.WriteString(v); err != nil {
+		panic(err)
+	}
 }
 
 // ---------------------------------------------------------------------------

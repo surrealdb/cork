@@ -19,7 +19,6 @@ import (
 	"math"
 	"reflect"
 	"time"
-	"unsafe"
 
 	"github.com/abcum/bump"
 )
@@ -61,8 +60,11 @@ func (r *Reader) readMany(l int) (val []byte) {
 }
 
 func (r *Reader) readText(l int) (val string) {
-	b := r.readMany(l)
-	return *(*string)(unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&b))))
+	val, err := r.r.ReadString(l)
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
 
 // ---------------------------------------------------------------------------
