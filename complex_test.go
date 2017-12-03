@@ -104,17 +104,17 @@ func TestComplex(t *testing.T) {
 			Tignored:      nil,
 			Signored:      nil,
 			Cignored:      nil,
-			Testable:      &Tested{Data: []byte("test")},
-			Selfable:      &Selfed{Data: []byte("test")},
-			Corkable:      &Corked{Data: []byte("test")},
-			Drrayble:      []Corked{{Data: []byte("test")}},
-			Arrayble:      []*Corked{{Data: []byte("test")}},
+			Testable:      &Tested{Data: []byte("test"), Test: map[string]string{}},
+			Selfable:      &Selfed{Data: []byte("test"), Test: map[string]string{}},
+			Corkable:      &Corked{Data: []byte("test"), Test: map[string]string{}},
+			Drrayble:      []Corked{{Data: []byte("test"), Test: map[string]string{}}},
+			Arrayble:      []*Corked{{Data: []byte("test"), Test: map[string]string{}}},
 		}
 
 		val.Embedded.One = "test"
 		val.Embedded.Two = 666
-		val.Embedded.Ced = &Corked{Data: []byte("test")}
-		val.Embedded.Sed = &Selfed{Data: []byte("test")}
+		val.Embedded.Ced = &Corked{Data: []byte("test"), Test: map[string]string{}}
+		val.Embedded.Sed = &Selfed{Data: []byte("test"), Test: map[string]string{}}
 
 		enc := NewEncoderBytes(&bit)
 		eer := enc.Encode(val)

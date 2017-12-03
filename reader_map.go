@@ -22,7 +22,7 @@ import (
 func (r *Reader) decodeMap(m reflect.Value) {
 	t := m.Type()
 	s := r.decodeMapLen()
-	if s > 0 && m.IsNil() {
+	if m.IsNil() {
 		m.Set(reflect.MakeMap(t))
 	}
 	for i := 0; i < s; i++ {
@@ -36,7 +36,7 @@ func (r *Reader) decodeMap(m reflect.Value) {
 
 func (r *Reader) decodeMapStringInt(m *map[string]int) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[string]int, s)
 	}
 	for i := 0; i < s; i++ {
@@ -50,7 +50,7 @@ func (r *Reader) decodeMapStringInt(m *map[string]int) {
 
 func (r *Reader) decodeMapStringUint(m *map[string]uint) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[string]uint, s)
 	}
 	for i := 0; i < s; i++ {
@@ -64,7 +64,7 @@ func (r *Reader) decodeMapStringUint(m *map[string]uint) {
 
 func (r *Reader) decodeMapStringBool(m *map[string]bool) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[string]bool, s)
 	}
 	for i := 0; i < s; i++ {
@@ -78,7 +78,7 @@ func (r *Reader) decodeMapStringBool(m *map[string]bool) {
 
 func (r *Reader) decodeMapStringString(m *map[string]string) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[string]string, s)
 	}
 	for i := 0; i < s; i++ {
@@ -92,7 +92,7 @@ func (r *Reader) decodeMapStringString(m *map[string]string) {
 
 func (r *Reader) decodeMapIntAny(m *map[int]interface{}) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[int]interface{}, s)
 	}
 	for i := 0; i < s; i++ {
@@ -106,7 +106,7 @@ func (r *Reader) decodeMapIntAny(m *map[int]interface{}) {
 
 func (r *Reader) decodeMapUintAny(m *map[uint]interface{}) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[uint]interface{}, s)
 	}
 	for i := 0; i < s; i++ {
@@ -120,7 +120,7 @@ func (r *Reader) decodeMapUintAny(m *map[uint]interface{}) {
 
 func (r *Reader) decodeMapStringAny(m *map[string]interface{}) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[string]interface{}, s)
 	}
 	for i := 0; i < s; i++ {
@@ -134,7 +134,7 @@ func (r *Reader) decodeMapStringAny(m *map[string]interface{}) {
 
 func (r *Reader) decodeMapTimeAny(m *map[time.Time]interface{}) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[time.Time]interface{}, s)
 	}
 	for i := 0; i < s; i++ {
@@ -148,7 +148,7 @@ func (r *Reader) decodeMapTimeAny(m *map[time.Time]interface{}) {
 
 func (r *Reader) decodeMapAnyAny(m *map[interface{}]interface{}) {
 	s := r.decodeMapLen()
-	if s > 0 && *m == nil {
+	if *m == nil {
 		*m = make(map[interface{}]interface{}, s)
 	}
 	for i := 0; i < s; i++ {

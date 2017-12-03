@@ -320,7 +320,7 @@ func TestOptions(t *testing.T) {
 	Convey("Can create reflect map type", t, func() {
 		var tmp interface{}
 		var buf []byte
-		var val = map[string]Tested{"test": {Data: []byte("test")}, "other": {Data: []byte("other")}}
+		var val = map[string]Tested{"test": {Data: []byte("test"), Test: map[string]string{}}, "other": {Data: []byte("other"), Test: map[string]string{}}}
 		var opt = &Handle{SortMaps: true, MapType: reflect.TypeOf(val)}
 		NewEncoderBytes(&buf).Options(opt).Encode(val)
 		So(buf, ShouldResemble, []byte{210, 132, 116, 101, 115, 116, 213, 132, 78, 97, 109, 101, 128, 132, 100, 97, 116, 97, 164, 116, 101, 115, 116, 132, 84, 101, 109, 112, 192, 132, 84, 101, 115, 116, 208, 133, 67, 111, 117, 110, 116, 0, 133, 111, 116, 104, 101, 114, 213, 132, 78, 97, 109, 101, 128, 132, 100, 97, 116, 97, 165, 111, 116, 104, 101, 114, 132, 84, 101, 109, 112, 192, 132, 84, 101, 115, 116, 208, 133, 67, 111, 117, 110, 116, 0})
