@@ -1,5 +1,5 @@
 hash: bfa1fd36ed45b188aa049b1b7adcc0f9d7bf6c5b2738902c8ab2a19749a505bb
-updated: 2017-11-30T00:48:09.973959Z
+updated: 2017-12-06T12:13:18.016614Z
 imports:
 - name: github.com/abcum/bump
   version: 8c43cce06105894a9b74f89a79ca62ba8e365cf7
@@ -22,6 +22,6 @@ testImports:
   - convey/gotest
   - convey/reporting
 - name: github.com/ugorji/go
-  version: 14c9063c18427f21537bc9da3d15cfb0ed3c61c0
+  version: f0aa215a7d653544d39d0e27dfa10fa4b183f397
   subpackages:
   - codec
