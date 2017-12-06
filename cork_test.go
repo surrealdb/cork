@@ -125,7 +125,6 @@ type Custom struct {
 	Corkable        *Corked
 	Funcable        func()
 	Chanable        chan int
-	Drrayble        []Corked
 	Arrayble        []*Corked
 	Embedded        struct {
 		One string

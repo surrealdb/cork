@@ -22,7 +22,7 @@ import (
 func (r *Reader) decodeArr(a reflect.Value) {
 	t := a.Type()
 	s := r.decodeArrLen()
-	if s > 0 && (a.IsNil() || a.Len() < s) {
+	if a.IsNil() || a.Len() < s {
 		a.Set(reflect.MakeSlice(t, s, s))
 	}
 	for i := 0; i < s; i++ {
@@ -32,7 +32,7 @@ func (r *Reader) decodeArr(a reflect.Value) {
 
 func (r *Reader) decodeArrBool(a *[]bool) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]bool, s)
 	}
 	for i := 0; i < s; i++ {
@@ -42,7 +42,7 @@ func (r *Reader) decodeArrBool(a *[]bool) {
 
 func (r *Reader) decodeArrInt(a *[]int) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]int, s)
 	}
 	for i := 0; i < s; i++ {
@@ -52,7 +52,7 @@ func (r *Reader) decodeArrInt(a *[]int) {
 
 func (r *Reader) decodeArrInt8(a *[]int8) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]int8, s)
 	}
 	for i := 0; i < s; i++ {
@@ -62,7 +62,7 @@ func (r *Reader) decodeArrInt8(a *[]int8) {
 
 func (r *Reader) decodeArrInt16(a *[]int16) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]int16, s)
 	}
 	for i := 0; i < s; i++ {
@@ -72,7 +72,7 @@ func (r *Reader) decodeArrInt16(a *[]int16) {
 
 func (r *Reader) decodeArrInt32(a *[]int32) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]int32, s)
 	}
 	for i := 0; i < s; i++ {
@@ -82,7 +82,7 @@ func (r *Reader) decodeArrInt32(a *[]int32) {
 
 func (r *Reader) decodeArrInt64(a *[]int64) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]int64, s)
 	}
 	for i := 0; i < s; i++ {
@@ -92,7 +92,7 @@ func (r *Reader) decodeArrInt64(a *[]int64) {
 
 func (r *Reader) decodeArrUint(a *[]uint) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]uint, s)
 	}
 	for i := 0; i < s; i++ {
@@ -102,7 +102,7 @@ func (r *Reader) decodeArrUint(a *[]uint) {
 
 func (r *Reader) decodeArrUint8(a *[]uint8) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]uint8, s)
 	}
 	for i := 0; i < s; i++ {
@@ -112,7 +112,7 @@ func (r *Reader) decodeArrUint8(a *[]uint8) {
 
 func (r *Reader) decodeArrUint16(a *[]uint16) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]uint16, s)
 	}
 	for i := 0; i < s; i++ {
@@ -122,7 +122,7 @@ func (r *Reader) decodeArrUint16(a *[]uint16) {
 
 func (r *Reader) decodeArrUint32(a *[]uint32) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]uint32, s)
 	}
 	for i := 0; i < s; i++ {
@@ -132,7 +132,7 @@ func (r *Reader) decodeArrUint32(a *[]uint32) {
 
 func (r *Reader) decodeArrUint64(a *[]uint64) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]uint64, s)
 	}
 	for i := 0; i < s; i++ {
@@ -142,7 +142,7 @@ func (r *Reader) decodeArrUint64(a *[]uint64) {
 
 func (r *Reader) decodeArrString(a *[]string) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]string, s)
 	}
 	for i := 0; i < s; i++ {
@@ -152,7 +152,7 @@ func (r *Reader) decodeArrString(a *[]string) {
 
 func (r *Reader) decodeArrFloat32(a *[]float32) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]float32, s)
 	}
 	for i := 0; i < s; i++ {
@@ -162,7 +162,7 @@ func (r *Reader) decodeArrFloat32(a *[]float32) {
 
 func (r *Reader) decodeArrFloat64(a *[]float64) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]float64, s)
 	}
 	for i := 0; i < s; i++ {
@@ -172,7 +172,7 @@ func (r *Reader) decodeArrFloat64(a *[]float64) {
 
 func (r *Reader) decodeArrComplex64(a *[]complex64) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]complex64, s)
 	}
 	for i := 0; i < s; i++ {
@@ -182,7 +182,7 @@ func (r *Reader) decodeArrComplex64(a *[]complex64) {
 
 func (r *Reader) decodeArrComplex128(a *[]complex128) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]complex128, s)
 	}
 	for i := 0; i < s; i++ {
@@ -192,7 +192,7 @@ func (r *Reader) decodeArrComplex128(a *[]complex128) {
 
 func (r *Reader) decodeArrTime(a *[]time.Time) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]time.Time, s)
 	}
 	for i := 0; i < s; i++ {
@@ -202,7 +202,7 @@ func (r *Reader) decodeArrTime(a *[]time.Time) {
 
 func (r *Reader) decodeArrAny(a *[]interface{}) {
 	s := r.decodeArrLen()
-	if s > 0 && (*a == nil || len(*a) < s) {
+	if *a == nil || len(*a) < s {
 		*a = make([]interface{}, s)
 	}
 	for i := 0; i < s; i++ {
