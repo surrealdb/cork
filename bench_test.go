@@ -135,14 +135,12 @@ func init() {
 	jl.InternString = true
 	jl.HTMLCharsAsIs = true
 	jl.CheckCircularRef = false
-	jl.AsSymbols = codec.AsSymbolDefault
 	jl.SliceType = reflect.TypeOf([]interface{}(nil))
 	jl.MapType = reflect.TypeOf(map[string]interface{}(nil))
 
 	cl.Canonical = true
 	cl.InternString = true
 	cl.CheckCircularRef = false
-	cl.AsSymbols = codec.AsSymbolDefault
 	cl.SliceType = reflect.TypeOf([]interface{}(nil))
 	cl.MapType = reflect.TypeOf(map[string]interface{}(nil))
 
@@ -151,7 +149,6 @@ func init() {
 	ml.RawToString = true
 	ml.InternString = true
 	ml.CheckCircularRef = false
-	ml.AsSymbols = codec.AsSymbolDefault
 	ml.SliceType = reflect.TypeOf([]interface{}(nil))
 	ml.MapType = reflect.TypeOf(map[string]interface{}(nil))
 
