@@ -1,17 +1,17 @@
-hash: bfa1fd36ed45b188aa049b1b7adcc0f9d7bf6c5b2738902c8ab2a19749a505bb
-updated: 2018-01-10T11:38:48.116108Z
+hash: 62d21cfca38832e8bd3e77d4836797defb109341a7779aac885453fae7e91124
+updated: 2018-04-05T08:05:46.225462+01:00
 imports:
 - name: github.com/abcum/bump
-  version: 8c43cce06105894a9b74f89a79ca62ba8e365cf7
+  version: e52572d3ec79ace5222da0688e3d1bb87c76f776
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: 444abdf920945de5d4a977b572bcc6c674d1e4eb
+  version: 82b322028c96512b15077093b16a5f1c7ea897ac
   subpackages:
   - js
 - name: github.com/jtolds/gls
   version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
 - name: github.com/smartystreets/assertions
-  version: 0b37b35ec7434b77e77a4bb29b79677cced992ea
+  version: 7678a5452ebea5b7090a6b163f844c133f523da2
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
@@ -22,6 +22,6 @@ testImports:
   - convey/gotest
   - convey/reporting
 - name: github.com/ugorji/go
-  version: ccfe18359b55b97855cee1d3f74e5efbda4869dc
+  version: 9831f2c3ac1068a78f50999a30db84270f647af6
   subpackages:
   - codec
