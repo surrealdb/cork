@@ -1,8 +1,8 @@
 hash: 62d21cfca38832e8bd3e77d4836797defb109341a7779aac885453fae7e91124
-updated: 2018-04-05T08:05:46.225462+01:00
+updated: 2018-04-05T08:39:36.406329+01:00
 imports:
 - name: github.com/abcum/bump
-  version: e52572d3ec79ace5222da0688e3d1bb87c76f776
+  version: 526934c541e071b5a330671c76434b9e32d55638
 testImports:
 - name: github.com/gopherjs/gopherjs
   version: 82b322028c96512b15077093b16a5f1c7ea897ac
