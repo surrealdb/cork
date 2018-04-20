@@ -74,13 +74,13 @@ func (r *Reader) readLen() int {
 	switch {
 	case b >= cFixInt && b <= cFixInt+fixedInt:
 		return int(b)
-	case b == cInt8:
+	case b == cUint8:
 		return int(r.readOne())
-	case b == cInt16:
+	case b == cUint16:
 		return int(binary.BigEndian.Uint16(r.readMany(2)))
-	case b == cInt32:
+	case b == cUint32:
 		return int(binary.BigEndian.Uint32(r.readMany(4)))
-	case b == cInt64:
+	case b == cUint64:
 		return int(binary.BigEndian.Uint64(r.readMany(8)))
 	default:
 		panic(fail)
