@@ -1,5 +1,7 @@
 github.com/abcum/bump v0.0.0-20190928185744-721b645ec337 h1:GIriijGuFhy9s67y334iDkfvfY9fyMlctC9/N9XCbKQ=
 github.com/abcum/bump v0.0.0-20190928185744-721b645ec337/go.mod h1:nhz3F2Uy1ra958EB0V4uR1WjTdLmpiznz7sqMdRBi7A=
+github.com/abcum/bump v0.0.0-20190929092354-46a9c9dbf9ab h1:S7Bp0inII96zGek8nipouocogy9xjMcJuDUKIb/+jkw=
+github.com/abcum/bump v0.0.0-20190929092354-46a9c9dbf9ab/go.mod h1:nhz3F2Uy1ra958EB0V4uR1WjTdLmpiznz7sqMdRBi7A=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
