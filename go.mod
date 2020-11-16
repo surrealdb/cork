@@ -1,8 +1,8 @@
 module github.com/abcum/cork
 
-go 1.13
+go 1.15
 
 require (
-	github.com/abcum/bump v0.0.0-20190929092354-46a9c9dbf9ab
-	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337
+	github.com/abcum/bump v0.0.0-20201116071400-31a74cba5f19
+	github.com/smartystreets/goconvey v1.6.4
 )
