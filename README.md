@@ -2,7 +2,7 @@
 
 An efficient binary serialisation format for Go (Golang).
 
-[![](https://img.shields.io/circleci/token/cd14c319e747f26df1403e8e089a4c48fea767a1/project/abcum/cork/master.svg?style=flat-square)](https://circleci.com/gh/abcum/cork) [![](https://img.shields.io/badge/status-alpha-ff00bb.svg?style=flat-square)](https://github.com/abcum/cork) [![](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/abcum/cork) [![](https://goreportcard.com/badge/github.com/abcum/cork?style=flat-square)](https://goreportcard.com/report/github.com/abcum/cork) [![](https://img.shields.io/badge/license-Apache_License_2.0-00bfff.svg?style=flat-square)](https://github.com/abcum/cork) 
+[![](https://img.shields.io/badge/status-1.0.0-ff00bb.svg?style=flat-square)](https://github.com/surrealdb/cork) [![](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/surrealdb/cork) [![](https://goreportcard.com/badge/github.com/surrealdb/cork?style=flat-square)](https://goreportcard.com/report/github.com/surrealdb/cork) [![](https://img.shields.io/badge/license-Apache_License_2.0-00bfff.svg?style=flat-square)](https://github.com/surrealdb/cork) 
 
 #### Features
 
@@ -18,5 +18,5 @@ An efficient binary serialisation format for Go (Golang).
 #### Installation
 
 ```bash
-go get github.com/abcum/cork
+go get github.com/surrealdb/cork
 ```
