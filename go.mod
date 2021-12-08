@@ -1,8 +1,14 @@
-module github.com/abcum/cork
+module github.com/surrealdb/cork
 
-go 1.15
+go 1.17
 
 require (
-	github.com/abcum/bump v0.0.0-20201116071400-31a74cba5f19
-	github.com/smartystreets/goconvey v1.6.4
+	github.com/smartystreets/goconvey v1.7.2
+	github.com/surrealdb/bump v0.0.0-20211208102305-88d509230106
+)
+
+require (
+	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
+	github.com/jtolds/gls v4.20.0+incompatible // indirect
+	github.com/smartystreets/assertions v1.2.0 // indirect
 )

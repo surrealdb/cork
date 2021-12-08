@@ -152,7 +152,7 @@ is treated exactly like an unexported field and is ignored.
 
 Specification
 
-The full specification can be found at http://github.com/abcum/cork/SPEC.md
+The full specification can be found at http://github.com/surrealdb/cork/SPEC.md
 
 */
 package cork

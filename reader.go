@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/abcum/bump"
+	"github.com/surrealdb/bump"
 )
 
 // Reader is used when self-decoding a cork.Selfer item from binary form.

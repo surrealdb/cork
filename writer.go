@@ -18,7 +18,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/abcum/bump"
+	"github.com/surrealdb/bump"
 )
 
 // Writer is used when self-encoding a cork.Selfer item into binary form.
